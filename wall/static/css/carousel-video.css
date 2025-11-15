@@ -1,0 +1,231 @@
+/* ================================================================
+   CAROUSEL & VIDEO - CSS ADDITIONNEL
+   ================================================================ */
+
+/* Bouton fullscreen pour vidéo inline */
+.video-fullscreen-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 0.25rem;
+  color: white;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.video-fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.video-fullscreen-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Video thumbnail quand vidéo joue inline */
+.video-thumbnail-wrapper video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+/* Actions visibles sur hover dans carousel */
+.carousel-column .testimony-card {
+  cursor: pointer;
+  position: relative;
+}
+
+.carousel-column .testimony-card-actions {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.carousel-column .testimony-card:hover .testimony-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pause animation au hover pour carousel */
+.carousel-column:hover .carousel-scroll-container {
+  animation-play-state: paused;
+}
+
+/* Amélioration de la zone cliquable pour le play */
+.video-play-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+}
+
+.video-play-overlay:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.video-play-button {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--color-red-primary, #950000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(149, 0, 0, 0.3);
+}
+
+.video-play-overlay:hover .video-play-button {
+  transform: scale(1.2);
+  box-shadow: 0 6px 20px rgba(149, 0, 0, 0.5);
+}
+
+.video-play-button svg {
+  margin-left: 3px; /* Centrage visuel du triangle */
+}
+
+/* Indicateur de durée vidéo */
+.video-duration {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+/* Amélioration des boutons de partage */
+.share-buttons {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.share-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid #9CA3AF;
+  background: white;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 0;
+}
+
+.share-btn:hover {
+  background: #F9FAFB;
+  border-color: #950000;
+  transform: scale(1.1);
+}
+
+.share-btn svg {
+  width: 14px;
+  height: 14px;
+  color: #6B7280;
+  transition: color 0.3s ease;
+}
+
+.share-btn:hover svg {
+  color: #950000;
+}
+
+/* Bouton Amen avec animation */
+.amen-button {
+  background: #F3F4F6;
+  color: #1F2933;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+.amen-button:hover:not(.disabled):not(.active) {
+  background: #E5E7EB;
+  transform: scale(1.03);
+}
+
+.amen-button.active {
+  background: var(--color-red-primary, #950000);
+  color: #fff;
+}
+
+.amen-button.active:hover:not(.disabled) {
+  background: #750000;
+}
+
+.amen-button.disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  color: #fff;
+}
+
+.amen-button span:first-child {
+  font-size: 0.875rem;
+}
+
+/* Animation au clic pour Amen */
+@keyframes amenPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.amen-button:active:not(.disabled) {
+  animation: amenPop 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .video-play-button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  .video-fullscreen-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+  
+  .video-fullscreen-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .share-btn {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  
+  .share-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
