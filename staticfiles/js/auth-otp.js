@@ -1,0 +1,551 @@
+// ================================================
+// AUTH OTP (Email code) - Signup/Login tabs + countdown
+// ================================================
+
+(function () {
+  const OTP_DIALOG_TEMPLATE = `
+    <div class="modal-content auth-modal-card">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" id="authModalTitle">Espace membre</h2>
+          <p class="modal-subtitle" id="authModalSubtitle">Identifie-toi pour partager ou célébrer un témoignage.</p>
+        </div>
+        <button class="modal-close" type="button" id="otpCloseBtn">&times;</button>
+      </div>
+
+      <div class="tabs-container auth-tabs">
+        <button type="button" class="tab-btn active" data-auth-mode="signup">
+          Créer un compte
+        </button>
+        <button type="button" class="tab-btn" data-auth-mode="login">
+          Connexion
+        </button>
+      </div>
+
+      <div class="auth-steps">
+        <div id="authStepForm">
+          <div class="form-row" id="authNameRow">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" id="authFirstName" class="form-input" placeholder="Prénom">
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" id="authLastName" class="form-input" placeholder="Nom">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="authEmail" class="form-input" placeholder="email@example.com" required>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" id="otpCancelBtn">Annuler</button>
+            <button type="button" class="submit-btn" id="otpStartBtn">Recevoir le code</button>
+          </div>
+        </div>
+
+        <div id="authStepCode" class="hidden">
+          <p class="modal-subtitle" id="otpSummary">
+            Un code de 6 chiffres vient d'être envoyé à votre adresse email.
+          </p>
+          <div class="form-group">
+            <label>Code</label>
+            <input type="text" id="authCode" maxlength="6" class="form-input code-input" placeholder="000000">
+          </div>
+
+          <div class="otp-countdown">
+            <span id="otpCountdown">Renvoyer un code dans 01:00</span>
+            <button type="button" class="link-btn" id="otpResendBtn" disabled>Renvoyer le code</button>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" id="otpBackBtn">Modifier l'email</button>
+            <button type="button" class="submit-btn" id="otpVerifyBtn">Valider le code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let currentAuthMode = 'signup';
+  let countdownTimer = null;
+  let countdownRemaining = 0;
+
+  window.AUTH_OTP = window.AUTH_OTP || {
+    nextAction: null,
+    ensureAuthThen(fn) {
+      if (window.STATE && window.STATE.userName) {
+        if (typeof fn === 'function') fn();
+        return;
+      }
+      this.nextAction = fn || null;
+      showToast('Connectez-vous pour partager votre témoignage', {
+        actionText: 'Se connecter',
+        onAction: () => openAuthDialogOTP()
+      });
+      openAuthDialogOTP();
+    }
+  };
+
+  function getCSRF() {
+    const name = 'csrftoken=';
+    const parts = document.cookie ? document.cookie.split(';') : [];
+    for (let c of parts) {
+      const cookie = c.trim();
+      if (cookie.indexOf(name) === 0) return cookie.substring(name.length);
+    }
+    return '';
+  }
+
+  async function apiPost(url, data) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRF()
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify(data || {})
+    });
+    let json = {};
+    try {
+      json = await res.json();
+    } catch {
+      json = {};
+    }
+    if (!res.ok || json.ok === false) {
+      const text = (!json || Object.keys(json).length === 0) ? (await res.text().catch(() => '')) : '';
+      const msg = (json && json.error) ? json.error : (text || `Erreur API (HTTP ${res.status})`);
+      throw new Error(msg);
+    }
+    return json;
+  }
+
+  async function checkAuth() {
+    try {
+      const r = await fetch('/auth/status/', { credentials: 'same-origin' });
+      const j = await r.json();
+      if (j && j.ok && j.user) {
+        const name = j.user.first_name
+          ? `${j.user.first_name}${j.user.last_name ? ` ${j.user.last_name}` : ''}`
+          : (j.user.email || '');
+        window.STATE.userName = name;
+        window.STATE.userEmail = j.user.email || '';
+        localStorage.setItem('bunda21_user', name);
+      } else {
+        window.STATE.userName = null;
+        window.STATE.userEmail = '';
+        localStorage.removeItem('bunda21_user');
+      }
+    } catch (e) {
+      window.STATE.userName = null;
+      window.STATE.userEmail = '';
+      localStorage.removeItem('bunda21_user');
+    }
+    if (window.MAIN && window.MAIN.renderAuthButton) {
+      window.MAIN.renderAuthButton();
+      patchAuthButtons();
+    }
+  }
+
+  async function signOut() {
+    try {
+      await apiPost('/auth/logout/', {});
+    } catch {}
+    await checkAuth();
+  }
+
+  function getDialog() {
+    let dlg = document.getElementById('otpAuthDialog');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'otpAuthDialog';
+      dlg.className = 'modal auth-modal';
+      dlg.innerHTML = OTP_DIALOG_TEMPLATE;
+      document.body.appendChild(dlg);
+    }
+    return dlg;
+  }
+
+  function initDialog() {
+    const dlg = getDialog();
+    if (dlg.dataset.otpInit === '1') return;
+    dlg.dataset.otpInit = '1';
+
+    dlg.querySelectorAll('[data-auth-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => setAuthMode(btn.dataset.authMode));
+    });
+
+    dlg.querySelector('#otpCloseBtn')?.addEventListener('click', () => {
+      dlg.close();
+      resetAuthDialog();
+    });
+    dlg.addEventListener('close', resetAuthDialog);
+
+    dlg.querySelector('#otpCancelBtn')?.addEventListener('click', () => {
+      dlg.close();
+      resetAuthDialog();
+    });
+
+    dlg.querySelector('#otpBackBtn')?.addEventListener('click', () => {
+      stopCountdown();
+      showStep('form');
+      const emailInput = dlg.querySelector('#authEmail');
+      if (emailInput) emailInput.focus();
+    });
+
+    dlg.querySelector('#otpStartBtn')?.addEventListener('click', () => requestOtp());
+    dlg.querySelector('#otpResendBtn')?.addEventListener('click', () => requestOtp({ fromResend: true }));
+    dlg.querySelector('#otpVerifyBtn')?.addEventListener('click', () => verifyAuth());
+
+    const emailInput = dlg.querySelector('#authEmail');
+    if (emailInput) {
+      emailInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          requestOtp();
+        }
+      });
+    }
+    const codeInput = dlg.querySelector('#authCode');
+    if (codeInput) {
+      codeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          verifyAuth();
+        }
+      });
+    }
+  }
+
+  function setAuthMode(mode = 'signup') {
+    currentAuthMode = mode === 'login' ? 'login' : 'signup';
+    const dlg = getDialog();
+    dlg.querySelectorAll('[data-auth-mode]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.authMode === currentAuthMode);
+    });
+    const nameRow = dlg.querySelector('#authNameRow');
+    if (nameRow) {
+      if (currentAuthMode === 'signup') {
+        nameRow.classList.remove('hidden');
+      } else {
+        nameRow.classList.add('hidden');
+      }
+    }
+    const title = dlg.querySelector('#authModalTitle');
+    const subtitle = dlg.querySelector('#authModalSubtitle');
+    if (title) {
+      title.textContent = currentAuthMode === 'signup' ? 'Créer mon compte' : 'Connexion rapide';
+    }
+    if (subtitle) {
+      subtitle.textContent = currentAuthMode === 'signup'
+        ? 'Entre ton nom et ton email pour créer ton espace CMP.'
+        : 'Saisis simplement ton email pour recevoir un code de connexion.';
+    }
+  }
+
+  function showStep(step) {
+    const dlg = getDialog();
+    const formStep = dlg.querySelector('#authStepForm');
+    const codeStep = dlg.querySelector('#authStepCode');
+    if (!formStep || !codeStep) return;
+    if (step === 'code') {
+      formStep.classList.add('hidden');
+      codeStep.classList.remove('hidden');
+    } else {
+      formStep.classList.remove('hidden');
+      codeStep.classList.add('hidden');
+    }
+  }
+
+  function resetAuthDialog() {
+    const dlg = getDialog();
+    const first = dlg.querySelector('#authFirstName');
+    const last = dlg.querySelector('#authLastName');
+    const email = dlg.querySelector('#authEmail');
+    const code = dlg.querySelector('#authCode');
+    if (first) first.value = '';
+    if (last) last.value = '';
+    if (email) email.value = '';
+    if (code) code.value = '';
+    dlg.dataset.lastEmail = '';
+    stopCountdown();
+    showStep('form');
+    setAuthMode('signup');
+    const resendBtn = dlg.querySelector('#otpResendBtn');
+    if (resendBtn) resendBtn.disabled = true;
+    const countdownLabel = dlg.querySelector('#otpCountdown');
+    if (countdownLabel) countdownLabel.textContent = 'Renvoyer un code dans 01:00';
+  }
+
+  function focusInitialField() {
+    const dlg = getDialog();
+    const target = currentAuthMode === 'signup'
+      ? dlg.querySelector('#authFirstName')
+      : dlg.querySelector('#authEmail');
+    if (target) target.focus();
+  }
+
+  function startCountdown(seconds = 60) {
+    stopCountdown();
+    countdownRemaining = seconds;
+    updateCountdown();
+    countdownTimer = setInterval(() => {
+      countdownRemaining -= 1;
+      updateCountdown();
+      if (countdownRemaining <= 0) {
+        stopCountdown();
+      }
+    }, 1000);
+  }
+
+  function stopCountdown() {
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    const dlg = getDialog();
+    const countdownLabel = dlg.querySelector('#otpCountdown');
+    const resendBtn = dlg.querySelector('#otpResendBtn');
+    if (countdownLabel) {
+      countdownLabel.textContent = 'Vous pouvez renvoyer un code.';
+    }
+    if (resendBtn) {
+      resendBtn.disabled = false;
+    }
+  }
+
+  function updateCountdown() {
+    const dlg = getDialog();
+    const countdownLabel = dlg.querySelector('#otpCountdown');
+    const resendBtn = dlg.querySelector('#otpResendBtn');
+    if (!countdownLabel || !resendBtn) return;
+
+    if (countdownRemaining > 0) {
+      const mins = String(Math.floor(countdownRemaining / 60)).padStart(2, '0');
+      const secs = String(countdownRemaining % 60).padStart(2, '0');
+      countdownLabel.textContent = `Renvoyer un code dans ${mins}:${secs}`;
+      resendBtn.disabled = true;
+    } else {
+      countdownLabel.textContent = 'Vous pouvez renvoyer un code.';
+      resendBtn.disabled = false;
+    }
+  }
+
+  function showCodeStep(email) {
+    const dlg = getDialog();
+    dlg.dataset.lastEmail = (email || '').toLowerCase();
+    const summary = dlg.querySelector('#otpSummary');
+    if (summary) {
+      summary.textContent = `Un code vient d'être envoyé à ${email}.`;
+    }
+    showStep('code');
+    const codeInput = dlg.querySelector('#authCode');
+    if (codeInput) {
+      codeInput.value = '';
+      codeInput.focus();
+    }
+    const resendBtn = dlg.querySelector('#otpResendBtn');
+    if (resendBtn) resendBtn.disabled = true;
+  }
+
+  function getFormValues() {
+    const dlg = getDialog();
+    const first = dlg.querySelector('#authFirstName');
+    const last = dlg.querySelector('#authLastName');
+    const email = dlg.querySelector('#authEmail');
+    return {
+      firstName: first ? first.value.trim() : '',
+      lastName: last ? last.value.trim() : '',
+      email: email ? email.value.trim().toLowerCase() : ''
+    };
+  }
+
+  async function requestOtp(options = {}) {
+    const dlg = getDialog();
+    const { fromResend = false } = options;
+    const startBtn = dlg.querySelector('#otpStartBtn');
+    const resendBtn = dlg.querySelector('#otpResendBtn');
+
+    const { firstName, lastName, email } = getFormValues();
+    if (!email) {
+      showToast('Merci de renseigner votre email.');
+      const emailInput = dlg.querySelector('#authEmail');
+      if (emailInput) emailInput.focus();
+      return;
+    }
+    if (currentAuthMode === 'signup' && !firstName) {
+      showToast('Le prénom est requis pour créer un compte.');
+      const firstInput = dlg.querySelector('#authFirstName');
+      if (firstInput) firstInput.focus();
+      return;
+    }
+
+    if (fromResend) {
+      if (resendBtn) resendBtn.disabled = true;
+    } else if (startBtn) {
+      startBtn.disabled = true;
+    }
+
+    try {
+      await apiPost('/auth/start/', {
+        first_name: currentAuthMode === 'signup' ? firstName : '',
+        last_name: currentAuthMode === 'signup' ? lastName : '',
+        email,
+        mode: currentAuthMode
+      });
+      showCodeStep(email);
+      startCountdown(60);
+      showToast('Code envoyé 📩', { kind: 'success' });
+    } catch (e) {
+      showToast(e.message || 'Impossible d’envoyer le code');
+      if (fromResend && resendBtn) {
+        resendBtn.disabled = false;
+      }
+    } finally {
+      if (!fromResend && startBtn) {
+        startBtn.disabled = false;
+      }
+    }
+  }
+
+  async function verifyAuth() {
+    const dlg = getDialog();
+    const verifyBtn = dlg.querySelector('#otpVerifyBtn');
+    const email = (dlg.dataset.lastEmail || '').trim().toLowerCase() || (dlg.querySelector('#authEmail')?.value.trim().toLowerCase() || '');
+    const code = (dlg.querySelector('#authCode')?.value || '').trim();
+
+    if (!email || !code) {
+      showToast('Merci de renseigner votre email et le code reçu.');
+      return;
+    }
+
+    if (verifyBtn) verifyBtn.disabled = true;
+    try {
+      await apiPost('/auth/verify/', { email, code });
+      dlg.close();
+      resetAuthDialog();
+      await checkAuth();
+      if (window.AUTH_OTP && typeof window.AUTH_OTP.nextAction === 'function') {
+        const todo = window.AUTH_OTP.nextAction;
+        window.AUTH_OTP.nextAction = null;
+        try { todo(); } catch {}
+      }
+      showToast('Connexion réussie 🙌', { kind: 'success' });
+    } catch (e) {
+      showToast(e.message || 'Code invalide');
+    } finally {
+      if (verifyBtn) verifyBtn.disabled = false;
+    }
+  }
+
+  function openAuthDialogOTP() {
+    const dlg = getDialog();
+    initDialog();
+    resetAuthDialog();
+    dlg.showModal();
+    focusInitialField();
+  }
+
+  function patchAuthButtons() {
+    const signInBtn = document.getElementById('signInBtn');
+    if (signInBtn) {
+      const clone = signInBtn.cloneNode(true);
+      signInBtn.parentNode.replaceChild(clone, signInBtn);
+      clone.addEventListener('click', openAuthDialogOTP);
+    }
+    const userBtn = document.getElementById('userMenuBtn');
+    if (userBtn) {
+      const clone2 = userBtn.cloneNode(true);
+      userBtn.parentNode.replaceChild(clone2, userBtn);
+      clone2.addEventListener('click', async () => {
+        if (confirm('Se déconnecter ?')) {
+          await signOut();
+        }
+      });
+    }
+  }
+
+  if (!window.MODALS) window.MODALS = {};
+  window.MODALS.openAuthDialog = openAuthDialogOTP;
+
+  (function wrapOpenTestimonyForm() {
+    const modals = window.MODALS || {};
+    const original = modals.openTestimonyForm;
+    if (typeof original === 'function') {
+      modals.openTestimonyForm = function () {
+        window.AUTH_OTP.ensureAuthThen(() => original());
+      };
+    } else {
+      setTimeout(wrapOpenTestimonyForm, 50);
+    }
+  })();
+
+  function ensureToastStyles() {
+    if (document.getElementById('toast-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'toast-styles';
+    style.textContent = `
+      #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+      .toast { background:#fff; color:#111; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.15); padding:12px 16px; min-width:280px; max-width:360px; display:flex; align-items:center; gap:12px; animation: toastIn .25s ease-out; border:1px solid rgba(0,0,0,.06); }
+      .toast.success { border-color:#10b981; }
+      .toast .toast-msg { flex:1; font-size:14px; line-height:1.35; }
+      .toast .toast-actions { display:flex; align-items:center; gap:8px; }
+      .toast .toast-btn { background:#950000; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; }
+      .toast .toast-close { background:transparent; border:none; cursor:pointer; color:#666; font-size:18px; line-height:1; }
+      @keyframes toastIn { from { opacity:0; transform: translateY(-6px)} to { opacity:1; transform: translateY(0)} }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showToast(message, opts) {
+    ensureToastStyles();
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast${opts && opts.kind === 'success' ? ' success' : ''}`;
+    toast.innerHTML = `
+      <div class="toast-msg">${message}</div>
+      <div class="toast-actions">
+        ${opts && opts.actionText ? `<button class="toast-btn" type="button">${opts.actionText}</button>` : ''}
+        <button class="toast-close" type="button" aria-label="Fermer">&times;</button>
+      </div>
+    `;
+    container.appendChild(toast);
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => container.removeChild(toast));
+    const actionBtn = toast.querySelector('.toast-btn');
+    if (actionBtn && opts && typeof opts.onAction === 'function') {
+      actionBtn.addEventListener('click', () => {
+        opts.onAction();
+        if (toast.parentNode) container.removeChild(toast);
+      });
+    }
+    if (!actionBtn) {
+      setTimeout(() => {
+        if (toast.parentNode) container.removeChild(toast);
+      }, 2500);
+    }
+  }
+
+  window.showToast = showToast;
+
+  function init() {
+    initDialog();
+    checkAuth();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('signin') === '1') openAuthDialogOTP();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

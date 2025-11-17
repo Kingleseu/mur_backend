@@ -1,0 +1,774 @@
+ /* ================================================================
+   FORMULAIRE D'AJOUT DE TÉMOIGNAGE - VERSION OPTIMISÉE
+   Fusion de form.css, form-compact.css et overrides.css
+   ================================================================ */
+
+/* ================================================================
+   1. MODAL FORMULAIRE - Layout principal
+   ================================================================ */
+
+/* Modal compact et responsive */
+#testimonyFormDialog .modal-content.testimony-form-modal-large {
+  width: min(600px, 90vw);
+  max-width: 600px;
+  max-height: min(88dvh, 860px);
+  padding: clamp(14px, 2vw, 20px);
+  border-radius: clamp(14px, 2vw, 18px);
+  overflow: hidden;
+  margin-inline: auto;
+}
+
+/* Structure du formulaire */
+.testimony-form-complete {
+  display: grid;
+  gap: clamp(10px, 1.8vw, 16px);
+}
+
+/* Sous-titre du modal */
+.modal-subtitle {
+  color: #6B7280;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* ================================================================
+   2. TABS - Type de témoignage (Texte / Vidéo)
+   ================================================================ */
+
+.tabs-container {
+  display: flex;
+  gap: 0;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 4px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.tab-btn {
+  flex: 1 1 0%;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #374151;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn i {
+  width: 16px;
+  height: 16px;
+}
+
+.tab-btn.active {
+  background: white;
+  color: #950000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ================================================================
+   3. SECTIONS DU FORMULAIRE
+   ================================================================ */
+
+.testimony-section {
+  display: block;
+}
+
+.testimony-section.hidden {
+  display: none;
+}
+
+/* ================================================================
+   4. POST-IT PREVIEW - Zone de texte stylisée
+   ================================================================ */
+
+#postItPreview {
+  position: relative;
+  padding: clamp(8px, 1.5vw, 12px);
+  border-radius: 1rem;
+  border: 2px solid #F5D693;
+  background: #FFF6D9;
+  min-height: clamp(140px, 26vh, 280px);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contrôles (Aa / Palette de couleurs) */
+.postit-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.375rem;
+  z-index: 10;
+}
+
+.control-btn {
+  width: clamp(34px, 3.2vw, 42px);
+  height: clamp(34px, 3.2vw, 42px);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 0;
+  font-size: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.control-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.icon-aa {
+  display: block;
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1;
+  transform: translateY(1px);
+}
+
+/* ================================================================
+   5. POPOVERS - Sélection police/couleur
+   ================================================================ */
+
+.popover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border-radius: 0.5rem;
+  padding: 0.875rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 13rem;
+  z-index: 20;
+  border: 1px solid #E5E7EB;
+}
+
+.popover.hidden {
+  display: none;
+}
+
+.popover h4 {
+  font-size: 0.75rem;
+  color: #6B7280;
+  margin-bottom: 0.625rem;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Grilles de sélection */
+.font-grid,
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+}
+
+.font-option,
+.color-option {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid #E5E7EB;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.font-option:hover,
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: #950000;
+}
+
+.font-option.active,
+.color-option.active {
+  border-color: #950000;
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(149, 0, 0, 0.1);
+}
+
+/* ================================================================
+   6. TEXTAREA - Zone de saisie
+   ================================================================ */
+
+.testimony-textarea-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 3.5rem;
+}
+
+#formTestimony {
+  width: 100%;
+  min-height: clamp(110px, 22vh, 220px);
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font-size: clamp(0.95rem, 1.6vw, 1rem);
+  line-height: 1.7;
+  color: #374151;
+  font-family: 'Inter', sans-serif;
+  flex: 1;
+}
+
+#formTestimony::placeholder {
+  color: rgba(107, 114, 128, 0.5);
+}
+
+.char-count {
+  text-align: right;
+  font-size: 0.875rem;
+  color: #6B7280;
+  margin-top: 0.5rem;
+}
+
+/* ================================================================
+   7. UPLOAD PHOTOS
+   ================================================================ */
+
+.upload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.upload-btn {
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+  background: #F9FAFB;
+  border-color: #950000;
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Grille des photos */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 0.625rem;
+}
+
+.photo-preview {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #F3F4F6;
+}
+
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: #EF4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.photo-preview:hover .remove-photo {
+  opacity: 1;
+}
+
+/* ================================================================
+   8. OPTIONS VIDÉO
+   ================================================================ */
+
+.video-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+  margin-top: 1rem;
+}
+
+.video-option-btn {
+  padding: 1.5rem 0.875rem;
+  border: 2px dashed #D1D5DB;
+  border-radius: 0.5rem;
+  background: #F9FAFB;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+  transition: all 0.3s ease;
+}
+
+.video-option-btn:hover {
+  border-color: #950000;
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(149, 0, 0, 0.1);
+}
+
+.option-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: #950000;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+}
+
+.option-text {
+  text-align: center;
+}
+
+.option-text strong {
+  display: block;
+  color: #111827;
+  margin-bottom: 0.25rem;
+  font-size: 0.9375rem;
+}
+
+.option-text span {
+  font-size: 0.8125rem;
+  color: #6B7280;
+}
+
+/* ================================================================
+   9. ENREGISTREMENT VIDÉO
+   ================================================================ */
+
+.recording-section,
+#recordingSection {
+  margin-top: 1rem;
+}
+
+.recording-section.hidden,
+#recordingSection.hidden {
+  display: none;
+}
+
+.recording-section video,
+#recordingSection video,
+#recordingPreview {
+  width: 100%;
+  border-radius: 0.5rem;
+  background: black;
+  max-height: min(50vh, 400px) !important; /* Force la hauteur optimisée */
+  object-fit: cover;
+  display: block;
+}
+
+.recording-controls,
+#recordingSection .recording-controls {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important; /* Gauche-droite */
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #FEF2F2;
+  border-radius: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Bloc gauche avec statut + timer */
+.recording-status,
+#recordingSection .recording-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px;
+  background: #991b1b10;
+  border-radius: 12px;
+  padding: 8px 12px;
+  flex: 0 1 auto; /* Ne prend que l'espace nécessaire */
+}
+
+.recording-indicator,
+#recordingSection .recording-indicator {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.recording-dot,
+#recordingSection .recording-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.25);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+}
+
+/* Bouton stop */
+.stop-btn,
+#recordingSection .stop-btn,
+#stopRecordingBtn {
+  background: #EF4444 !important;
+  color: white !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.5rem !important;
+  border: none !important;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex: 0 0 auto; /* Ne se compresse pas */
+}
+
+.stop-btn:hover,
+#recordingSection .stop-btn:hover,
+#stopRecordingBtn:hover {
+  background: #DC2626 !important;
+  transform: scale(1.05);
+}
+
+/* ================================================================
+   10. PREVIEW VIDÉO
+   ================================================================ */
+
+.video-preview-section {
+  margin-top: 1rem;
+}
+
+.video-preview-section.hidden {
+  display: none;
+}
+
+.video-preview-section video {
+  width: 100%;
+  border-radius: 0.5rem;
+  background: black;
+  max-height: min(50vh, 400px); /* Même hauteur que recording */
+  object-fit: cover;
+}
+
+.replace-btn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background: white;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.replace-btn:hover {
+  background: #F9FAFB;
+  border-color: #950000;
+}
+
+/* ================================================================
+   11. INFO NOTE
+   ================================================================ */
+
+.info-note {
+  background: #FFF4C2;
+  border: 1px solid #F5D693;
+  padding: 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.info-note strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ================================================================
+   12. ACTIONS DU FORMULAIRE
+   ================================================================ */
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #F9FAFB;
+}
+
+.submit-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  background: #950000;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: #750000;
+  transform: scale(1.05);
+}
+
+.submit-btn:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ================================================================
+   13. RESPONSIVE - TABLETTE
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .postit-controls {
+    top: 0.5rem;
+    right: 0.5rem;
+    gap: 0.25rem;
+  }
+  
+  .control-btn {
+    width: clamp(32px, 3vw, 38px);
+    height: clamp(32px, 3vw, 38px);
+  }
+  
+  .popover {
+    width: 11rem;
+    padding: 0.75rem;
+  }
+  
+  .testimony-textarea-wrapper {
+    margin-top: 3rem;
+  }
+  
+  .video-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ================================================================
+   14. RESPONSIVE - MOBILE
+   ================================================================ */
+
+@media (max-width: 640px) {
+  #testimonyFormDialog .modal-content.testimony-form-modal-large {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 1rem;
+  }
+  
+  .tabs-container {
+    padding: 4px;
+  }
+  
+  .tab-btn {
+    padding: 10px 8px;
+    font-size: 0.875rem;
+  }
+  
+  .postit-controls {
+    flex-direction: column;
+    gap: 0.25rem;
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+  
+  .control-btn {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  /* Popover centré sur mobile */
+  .popover {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: min(280px, 90vw);
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .testimony-textarea-wrapper {
+    margin-top: 5rem;
+  }
+  
+  #formTestimony {
+    font-size: 0.9375rem;
+  }
+  
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .video-option-btn {
+    padding: 1.25rem 0.75rem;
+  }
+  
+  .option-icon {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+  }
+  
+  .option-text strong {
+    font-size: 0.875rem;
+  }
+  
+  .option-text span {
+    font-size: 0.75rem;
+  }
+  
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .recording-section video,
+  .video-preview-section video {
+    max-height: 300px;
+  }
+}
+
+/* ================================================================
+   15. RESPONSIVE - TRÈS PETIT MOBILE
+   ================================================================ */
+
+@media (max-width: 420px) {
+  /* Tabs en colonne si trop étroit */
+  .tabs-container {
+    flex-direction: column;
+  }
+  
+  .tabs-container .tab-btn {
+    width: 100%;
+  }
+  
+  .testimony-textarea-wrapper {
+    margin-top: 5.5rem;
+  }
+  
+  .control-btn {
+    width: 1.875rem;
+    height: 1.875rem;
+  }
+  
+  .photos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ================================================================
+   16. LANDSCAPE MOBILE
+   ================================================================ */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #testimonyFormDialog .modal-content.testimony-form-modal-large {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  #postItPreview {
+    min-height: 200px;
+  }
+  
+  #formTestimony {
+    min-height: 120px;
+  }
+  
+  .recording-section video,
+  .video-preview-section video {
+    max-height: 200px;
+  }
+}

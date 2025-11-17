@@ -12,13 +12,10 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')  # met une vraie clé en prod
-DEBUG = os.getenv('DEBUG', 'true').lower() == 'true'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
+DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    # Ajoute tes domaines de prod ici
-    '127.0.0.1', 'localhost',
-]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']  
 
 # -------------------------------------------------------------------
 # Apps
@@ -29,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
 
     # Libs
@@ -44,6 +42,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -132,6 +131,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / 'wall' / 'static',
 ]
+
+WHITENOISE_MAX_AGE = 31536000  # 1 an
 
 # ====== Media ======
 USE_S3_MEDIA = False  # Forcer le stockage local
