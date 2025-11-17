@@ -10,6 +10,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from django.db.models import Count
+from django.core.files.storage import default_storage
 
 from .models import Testimony, VerificationCode, MemberProfile
 from .forms import TestimonyForm
@@ -86,13 +87,15 @@ def home(request):
         }
         images_qs = list(t.images.all()[:5])
         if images_qs:
-            base['images'] = [
-                _absolute(request, img.image.url) if img.image else ''
-                for img in images_qs
-            ]
-            base['images'] = [url for url in base['images'] if url]
-            if base['images']:
-                base.setdefault('thumbnail', base['images'][0])
+            valid_urls = []
+            for img in images_qs:
+                if not (img.image and img.image.name):
+                    continue
+                if img.image.storage.exists(img.image.name):
+                    valid_urls.append(_absolute(request, img.image.url))
+            if valid_urls:
+                base['images'] = valid_urls
+                base.setdefault('thumbnail', valid_urls[0])
 
         if t.kind == 'video':
             thumb_file = ''
@@ -100,7 +103,7 @@ def home(request):
             if first_image and first_image.image:
                 thumb_file = first_image.image.url
             video_url = ''
-            if t.video_file:
+            if t.video_file and t.video_file.name and t.video_file.storage.exists(t.video_file.name):
                 path = t.video_file.url
                 video_url = _absolute(request, path)
             elif t.video:
