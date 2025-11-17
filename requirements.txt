@@ -19,3 +19,4 @@ uritemplate==4.2.0
 django-storages==1.14.4
 boto3==1.35.59
 python-dotenv==1.0.1
+whitenoise==6.11.0
