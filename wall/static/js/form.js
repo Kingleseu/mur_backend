@@ -2,44 +2,56 @@
 // FORMULAIRE D'AJOUT DE TÉMOIGNAGE COMPLET
 // ================================================
 
-let formInitialized = false;
-
-function setTestimonyType(type = 'text') {
-  const targetType = type === 'video' ? 'video' : 'text';
-  if (window.STATE) {
-    window.STATE.testimonyType = targetType;
+function getSelectedCategoryValue(strict = true) {
+  const select = document.getElementById('formCategory');
+  if (!select) return '';
+  let value = (select.value || '').trim();
+  if (!value) return '';
+  if (value.toLowerCase() === 'autre') {
+    const customInput = document.getElementById('formCategoryCustom');
+    const custom = (customInput ? customInput.value : '').trim();
+    if (!custom) {
+      return strict ? '' : 'Autre';
+    }
+    return custom;
   }
+  return value;
+}
+
+function setTestimonyType(mode) {
+  const target = mode === 'video' ? 'video' : 'text';
+  window.STATE.testimonyType = target;
 
   const textSection = document.getElementById('textTestimonySection');
   const videoSection = document.getElementById('videoTestimonySection');
   if (textSection && videoSection) {
-    textSection.classList.toggle('hidden', targetType !== 'text');
-    videoSection.classList.toggle('hidden', targetType !== 'video');
+    textSection.classList.toggle('hidden', target !== 'text');
+    videoSection.classList.toggle('hidden', target !== 'video');
   }
 
-  document.querySelectorAll('.tab-btn').forEach((btn) => {
+  const textField = document.getElementById('formTestimony');
+  if (textField) {
+    textField.required = target === 'text';
+  }
+  // On garde la validation vidéo côté JS (enregistrement ou upload obligatoire)
+  const videoInput = document.getElementById('videoInput');
+  if (videoInput) {
+    videoInput.required = false;
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
     const btnType = btn.dataset.type || 'text';
-    btn.classList.toggle('active', btnType === targetType);
+    btn.classList.toggle('active', btnType === target);
   });
-
-  // Toggle required attribute so the browser doesn't block video submissions
-  const testimonyTextarea = document.getElementById('formTestimony');
-  if (testimonyTextarea) {
-    testimonyTextarea.required = (targetType === 'text');
-  }
 }
 
 function initializeTestimonyForm() {
-  if (formInitialized) return;
-  formInitialized = true;
   // Type de témoignage (Texte vs Vidéo)
   const tabs = document.querySelectorAll('.tab-btn');
   tabs.forEach(btn => {
-    btn.addEventListener('click', (event) => {
-      event.preventDefault();
-      setTestimonyType(btn.dataset.type);
-    });
+    btn.addEventListener('click', () => setTestimonyType(btn.dataset.type));
   });
+  setTestimonyType(window.STATE.testimonyType || 'text');
   
   // Sélecteur de police
   const fontSelector = document.getElementById('fontSelector');
@@ -92,6 +104,23 @@ function initializeTestimonyForm() {
     });
   });
   
+  // Catégorie -> champ custom
+  const categorySelect = document.getElementById('formCategory');
+  const customCategoryGroup = document.getElementById('customCategoryGroup');
+  const customCategoryInput = document.getElementById('formCategoryCustom');
+  function syncCustomCategoryField(){
+    if (!categorySelect || !customCategoryGroup) return;
+    const isOther = (categorySelect.value || '').toLowerCase() === 'autre';
+    customCategoryGroup.classList.toggle('hidden', !isOther);
+    if (!isOther && customCategoryInput){
+      customCategoryInput.value = '';
+    }
+  }
+  if (categorySelect){
+    categorySelect.addEventListener('change', syncCustomCategoryField);
+    syncCustomCategoryField();
+  }
+  
   // Fermer popovers en cliquant ailleurs
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#fontSelector') && !e.target.closest('#fontPopover')) {
@@ -120,26 +149,35 @@ function initializeTestimonyForm() {
   
   photoInput.addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
-    const existingFiles = Array.isArray(window.STATE.imageFiles) ? window.STATE.imageFiles.length : 0;
+    const currentCount = Array.isArray(window.STATE.imageFiles) ? window.STATE.imageFiles.length : 0;
+    const remainingSlots = 5 - currentCount;
     
-    if (existingFiles + files.length > 5) {
+    if (remainingSlots <= 0) {
       alert('Vous pouvez ajouter maximum 5 photos');
+      photoInput.value = '';
       return;
     }
     
-    files.forEach(file => {
-      if (!file) return;
-      if (!Array.isArray(window.STATE.imageFiles)) {
-        window.STATE.imageFiles = [];
-      }
-      window.STATE.imageFiles.push(file);
+    const allowedFiles = files.slice(0, remainingSlots);
+    
+    if (!Array.isArray(window.STATE.imageFiles)) {
+      window.STATE.imageFiles = [];
+    }
+    
+    const processFile = (index) => {
+      if (index >= allowedFiles.length) return;
+      const file = allowedFiles[index];
       const reader = new FileReader();
       reader.onload = (evt) => {
+        window.STATE.imageFiles.push(file);
         window.STATE.uploadedImages.push(evt.target.result);
         renderPhotosPreview();
+        processFile(index + 1);
       };
       reader.readAsDataURL(file);
-    });
+    };
+    
+    processFile(0);
     
     // Reset input
     photoInput.value = '';
@@ -184,23 +222,21 @@ function initializeTestimonyForm() {
   cancelBtn.addEventListener('click', () => {
     window.MODALS.closeTestimonyForm();
   });
-
-  const initialType = (window.STATE && window.STATE.testimonyType) || 'text';
-  setTestimonyType(initialType);
 }
 
 function renderPhotosPreview() {
   const container = document.getElementById('photosPreview');
-  container.innerHTML = window.STATE.uploadedImages.map((img, index) => `
+  if (!container) return;
+  const previews = window.STATE.uploadedImages || [];
+  container.innerHTML = previews.map((img, index) => `
     <div class="photo-preview">
       <img src="${img}" alt="Photo ${index + 1}">
-      <button type="button" class="remove-photo" data-index="${index}">×</button>
+      <button type="button" class="remove-photo" data-index="${index}">&times;</button>
     </div>
   `).join('');
-  
   container.querySelectorAll('.remove-photo').forEach(btn => {
     btn.addEventListener('click', () => {
-      const index = parseInt(btn.dataset.index);
+      const index = parseInt(btn.dataset.index, 10);
       window.STATE.uploadedImages.splice(index, 1);
       if (Array.isArray(window.STATE.imageFiles)) {
         window.STATE.imageFiles.splice(index, 1);
@@ -237,19 +273,15 @@ async function startRecording() {
     };
     
     window.STATE.mediaRecorder.onstop = () => {
-      const blob = new Blob(window.STATE.recordedChunks, { type: 'video/webm' });
-      const fileName = `temoignage-${Date.now()}.webm`;
-      let fileToStore;
-      try {
-        fileToStore = new File([blob], fileName, { type: blob.type || 'video/webm' });
-      } catch (_){
-        fileToStore = blob;
-        fileToStore.name = fileName;
+      if (window.REC_TIMER && typeof window.REC_TIMER.stop === 'function') {
+        window.REC_TIMER.stop(true);
       }
-      const url = URL.createObjectURL(fileToStore);
+      document.querySelector('.recording-dot')?.classList.remove('active');
+      const blob = new Blob(window.STATE.recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
       
       window.STATE.videoPreview = url;
-      window.STATE.videoFile = fileToStore;
+      window.STATE.videoFile = blob;
       
       stream.getTracks().forEach(track => track.stop());
       
@@ -259,6 +291,10 @@ async function startRecording() {
     };
     
     window.STATE.mediaRecorder.start();
+    if (window.REC_TIMER && typeof window.REC_TIMER.start === 'function') {
+      window.REC_TIMER.start();
+    }
+    document.querySelector('.recording-dot')?.classList.add('active');
     
     // Auto-stop après 2 minutes
     setTimeout(() => {
@@ -285,6 +321,10 @@ function stopRecording() {
   if (window.STATE.mediaRecorder && window.STATE.mediaRecorder.state === 'recording') {
     window.STATE.mediaRecorder.stop();
   }
+  if (window.REC_TIMER && typeof window.REC_TIMER.stop === 'function') {
+    window.REC_TIMER.stop(true);
+  }
+  document.querySelector('.recording-dot')?.classList.remove('active');
 }
 
 function handleVideoUpload(e) {
@@ -309,6 +349,12 @@ function handleFormSubmit(e) {
   
   const title = document.getElementById('formTitle').value.trim();
   
+  const categoryValue = getSelectedCategoryValue(true);
+  if (!categoryValue) {
+    alert('Veuillez sélectionner une catégorie (et la préciser si vous choisissez "Autre").');
+    return;
+  }
+  
   if (window.STATE.testimonyType === 'text') {
     const testimony = document.getElementById('formTestimony').value.trim();
     
@@ -316,7 +362,7 @@ function handleFormSubmit(e) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
-    
+
     // Déterminer la couleur
     let colorKey = 'yellow';
     const colorValue = window.STATE.selectedColor.value;
@@ -331,9 +377,9 @@ function handleFormSubmit(e) {
       color: colorKey,
       font: window.STATE.selectedFont.name,
       author: window.STATE.userName || 'Anonyme',
-      location: 'Votre ville',
+      location: window.STATE.userLocation || 'Lieu non précisé',
       date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: 'Guérison',
+      category: categoryValue,
       images: window.STATE.uploadedImages
     };
     
@@ -355,9 +401,9 @@ function handleFormSubmit(e) {
       duration: '2:00',
       color: 'yellow',
       author: window.STATE.userName || 'Anonyme',
-      location: 'Votre ville',
+      location: window.STATE.userLocation || 'Lieu non précisé',
       date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: 'Famille'
+      category: categoryValue
     };
     
     window.CONFIG.TESTIMONIES.unshift(newTestimony);
@@ -384,12 +430,18 @@ function resetForm() {
   window.STATE.videoFile = null;
   window.STATE.videoPreview = null;
   window.STATE.recordedChunks = [];
-  setTestimonyType('text');
   window.STATE.selectedColor = window.CONFIG.POST_IT_COLORS[0];
   window.STATE.selectedFont = window.CONFIG.FONT_STYLES[0];
-  
+
+  setTestimonyType('text');
+
   document.getElementById('photosPreview').innerHTML = '';
   document.getElementById('charCount').textContent = '0';
+  document.getElementById('customCategoryGroup')?.classList.add('hidden');
+  const customCatInput = document.getElementById('formCategoryCustom');
+  if (customCatInput) customCatInput.value = '';
+  const categorySelectEl = document.getElementById('formCategory');
+  if (categorySelectEl) categorySelectEl.selectedIndex = 0;
   
   const preview = document.getElementById('postItPreview');
   preview.style.backgroundColor = window.STATE.selectedColor.value;
@@ -397,13 +449,171 @@ function resetForm() {
   
   const textarea = document.getElementById('formTestimony');
   textarea.style.fontFamily = window.STATE.selectedFont.value;
-
 }
+
+(function () {
+  const FONT_FAMILIES = {
+    "Sans-serif": "Inter, sans-serif",
+    "Serif": "Merriweather, serif",
+    "Indie Flower": "'Indie Flower', cursive",
+    "Caveat": "Caveat, cursive",
+    "Patrick Hand": "'Patrick Hand', cursive",
+    "Kalam": "Kalam, cursive",
+    "Permanent Marker": "'Permanent Marker', cursive",
+    "Shadows Into Light": "'Shadows Into Light', cursive"
+  };
+
+  const fontBtn = document.getElementById('fontSelector');
+  const fontLabel = document.getElementById('fontSelectorLabel');
+  const fontPopover = document.getElementById('fontPopover');
+  if (!fontBtn || !fontLabel || !fontPopover) return;
+
+  function updateFontSelectorPreview(fontKey) {
+    const family = FONT_FAMILIES[fontKey] || FONT_FAMILIES["Sans-serif"];
+    fontLabel.style.fontFamily = family;
+    fontLabel.textContent = "Aa";
+    fontBtn.title = `Police : ${fontKey}`;
+
+    // poids légèrement plus marqué pour lisibilité sur petit bouton
+    if (fontKey === "Serif") {
+      fontLabel.style.fontWeight = "700";
+    } else if (fontKey === "Permanent Marker") {
+      fontLabel.style.fontWeight = "700";
+      fontLabel.style.letterSpacing = "0.4px";
+    } else {
+      fontLabel.style.fontWeight = "600";
+      fontLabel.style.letterSpacing = "0.2px";
+    }
+
+    // option : géométrie différente pour certaines polices manuscrites
+    if (fontKey === "Indie Flower" || fontKey === "Caveat" || fontKey === "Patrick Hand" || fontKey === "Kalam" || fontKey === "Shadows Into Light") {
+      fontLabel.style.transform = "translateY(1px)";
+    } else {
+      fontLabel.style.transform = "translateY(1px)";
+    }
+  }
+
+  // 1) init à partir du bouton actif dans le popover
+  const active = fontPopover.querySelector('.font-option.active');
+  const initialKey = active?.getAttribute('data-font') || "Sans-serif";
+  updateFontSelectorPreview(initialKey);
+
+  // 2) écoute les clics de changement de police
+  fontPopover.addEventListener('click', (e) => {
+    const btn = e.target.closest('.font-option');
+    if (!btn) return;
+    const key = btn.getAttribute('data-font');
+    if (!key) return;
+
+    // gère l'état actif visuel si besoin
+    fontPopover.querySelectorAll('.font-option.active').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    updateFontSelectorPreview(key);
+
+    // si ton code stocke aussi dans STATE, laisse-le faire ; ici on ne touche pas à ta logique
+  });
+
+  // 3) si toi (ou Figma Make) changes la police ailleurs dans ton JS,
+  // expose une petite API pour mettre à jour l'aperçu :
+  window.updateFontSelectorPreview = updateFontSelectorPreview;
+})();
+
+// ================================================
+// JS DIVERS POUR LE FORMULAIRE DE TÉMOIGNAGE
+// ================================================
+(function(){
+  // === Segmented control : fallback JS si :has() pas supporté
+  const tabs = document.getElementById('typeTabs');
+  if (tabs) {
+    const indicator = tabs.querySelector('.tab-indicator');
+    const textBtn = tabs.querySelector('.tab-btn[data-type="text"]');
+    const videoBtn = tabs.querySelector('.tab-btn[data-type="video"]');
+    const supportsHas = CSS.supports?.('selector(:has(*))');
+
+    function updateIndicator(which){
+      if (!supportsHas && indicator) {
+        indicator.style.transform = (which === 'video') ? 'translateX(calc(100% + 8px))' : 'translateX(0)';
+      }
+    }
+
+    tabs.addEventListener('click', (e)=>{
+      const b = e.target.closest('.tab-btn'); if (!b) return;
+      const targetType = b.dataset.type || 'text';
+      setTestimonyType(targetType);
+      updateIndicator(targetType);
+    });
+
+    // init indicator en fonction de l'état courant
+    const initial = window.STATE.testimonyType || (textBtn?.classList.contains('active') ? 'text' : 'video');
+    updateIndicator(initial);
+  }
+
+  // === Timer d'enregistrement (2 minutes max)
+  const recSection = document.getElementById('recordingSection');
+  const recMax = recSection ? parseInt(recSection.dataset.maxSeconds || '120', 10) : 120;
+  const ringFg = recSection ? recSection.querySelector('.ring-fg') : null;
+  const mm = document.getElementById('recMinutes');
+  const ss = document.getElementById('recSeconds');
+  const circumference = 125.66; // 2πr pour r=20
+  let raf = null, startTs = null, remaining = recMax;
+
+  function fmt(n){ return String(n).padStart(2,'0'); }
+  function draw(t){
+    const elapsed = Math.min((t - startTs) / 1000, recMax);
+    const left = Math.max(0, recMax - elapsed);
+    const m = Math.floor(left / 60), s = Math.floor(left % 60);
+    if (mm && ss){ mm.textContent = fmt(m); ss.textContent = fmt(s); }
+    if (ringFg){
+      const ratio = elapsed / recMax; // 0 -> 1
+      ringFg.style.strokeDashoffset = String(circumference * ratio);
+    }
+    if (left <= 0){
+      stopTimer(true);
+      // si tu as une fonction qui arrête l'enregistrement, appelle-la ici :
+      // window.stopRecording && window.stopRecording();
+      document.getElementById('stopRecordingBtn')?.click(); // fallback
+      return;
+    }
+    raf = requestAnimationFrame(draw);
+  }
+
+  function startTimer(){
+    cancelAnimationFrame(raf); raf = null;
+    startTs = performance.now();
+    remaining = recMax;
+    if (ringFg) ringFg.style.strokeDashoffset = '0';
+    raf = requestAnimationFrame(draw);
+  }
+  function stopTimer(resetToFull){
+    cancelAnimationFrame(raf); raf = null;
+    if (resetToFull){
+      if (mm && ss){ mm.textContent = '02'; ss.textContent = '00'; }
+      if (ringFg) ringFg.style.strokeDashoffset = '0';
+    }
+  }
+
+  // Expose si tu veux piloter depuis ailleurs
+  window.REC_TIMER = { start: startTimer, stop: stopTimer };
+
+  // Raccord simple avec tes boutons existants
+  document.getElementById('stopRecordingBtn')?.addEventListener('click', ()=>{
+    stopTimer(true);
+  });
+  document.getElementById('replaceVideoBtn')?.addEventListener('click', ()=>{
+    stopTimer(true);
+  });
+})();
+
+document.getElementById('stopRecordingBtn')?.addEventListener('click', ()=>{
+  REC_TIMER.stop(true);
+  document.querySelector('.recording-dot')?.classList.remove('active');
+});
+
 
 // Export functions
 window.FORM = {
   initializeTestimonyForm,
-  setTestimonyType,
   renderPhotosPreview,
   startRecording,
   stopRecording,
@@ -412,14 +622,4 @@ window.FORM = {
   resetForm
 };
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!formInitialized) {
-      initializeTestimonyForm();
-    }
-  });
-} else {
-  if (!formInitialized) {
-    initializeTestimonyForm();
-  }
-}
+

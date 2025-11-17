@@ -25,41 +25,40 @@ function openTestimonyModal(testimony) {
   
   const initial = testimony.author.charAt(0).toUpperCase();
   
+  // Définir la couleur de la bande selon le post-it
+  const colorStrip = dialog.querySelector('.modal-color-strip');
+  if (colorStrip && testimony.color) {
+    const color = window.CONFIG.COLOR_MAP[testimony.color] || testimony.color;
+    colorStrip.style.background = color;
+  }
+  
   dialog.querySelector('.testimony-modal-title').textContent = testimony.title;
   dialog.querySelector('.testimony-avatar').textContent = initial;
   dialog.querySelector('.testimony-author').textContent = testimony.author;
-  dialog.querySelector('.testimony-location').textContent = testimony.location;
-  dialog.querySelector('.testimony-date').textContent = testimony.date;
-  const contentBlock = dialog.querySelector('.testimony-content');
-  if (contentBlock) {
-    contentBlock.textContent = testimony.fullText;
-    if (window.UTILS) {
-      contentBlock.style.fontFamily = window.UTILS.getFontFamilyValue(testimony);
-      contentBlock.style.background = window.UTILS.getPostItColor(testimony);
-    }
-  }
+  dialog.querySelector('.testimony-location').textContent = testimony.location || 'Lieu non précisé';
+  dialog.querySelector('.testimony-date').textContent = testimony.date || '';
+  dialog.querySelector('.testimony-content').textContent = testimony.fullText;
   
-  const gallery = document.getElementById('testimonyGallery');
+  const gallery = dialog.querySelector('#testimonyGallery');
   if (gallery) {
-    const imgs = Array.isArray(testimony.images) ? testimony.images : [];
-    if (imgs.length) {
-      const html = imgs.map((img) => {
-        const url = typeof img === 'string' ? img : (img && img.url) || '';
-        if (!url) return '';
-        return `<img src="${url}" alt="${testimony.title}">`;
-      }).join('');
-      gallery.innerHTML = html;
+    if (Array.isArray(testimony.images) && testimony.images.length) {
       gallery.classList.remove('hidden');
+      gallery.innerHTML = testimony.images.map((url, idx) => `
+        <div class="gallery-item">
+          <img src="${url}" alt="Illustration ${idx + 1}">
+        </div>
+      `).join('');
     } else {
-      gallery.innerHTML = '';
       gallery.classList.add('hidden');
+      gallery.innerHTML = '';
     }
   }
   
   const amenBtn = dialog.querySelector('.amen-button');
   amenBtn.dataset.testimonyId = testimony.id;
-  amenBtn.classList.toggle('active', hasAmened);
-  amenBtn.setAttribute('aria-pressed', hasAmened ? 'true' : 'false');
+  amenBtn.disabled = false;
+  amenBtn.classList.toggle('amen-active', hasAmened);
+  amenBtn.classList.remove('disabled');
   amenBtn.querySelector('.amen-count').textContent = amenCount;
   
   // Setup navigation
@@ -69,30 +68,31 @@ function openTestimonyModal(testimony) {
   const prevBtn = dialog.querySelector('.modal-prev');
   const nextBtn = dialog.querySelector('.modal-next');
   
-  prevBtn.disabled = currentIndex <= 0;
-  nextBtn.disabled = currentIndex >= testimonies.length - 1;
+  const hasMultiple = testimonies.length > 1;
+  prevBtn.disabled = !hasMultiple;
+  nextBtn.disabled = !hasMultiple;
   
   prevBtn.onclick = () => {
-    if (currentIndex > 0) {
-      const prevTestimony = testimonies[currentIndex - 1];
-      if (prevTestimony.type === 'video') {
-        closeTestimonyModal();
-        openVideoModal(prevTestimony);
-      } else {
-        openTestimonyModal(prevTestimony);
-      }
+    if (!hasMultiple) return;
+    const prevIndex = (currentIndex - 1 + testimonies.length) % testimonies.length;
+    const prevTestimony = testimonies[prevIndex];
+    if (prevTestimony.type === 'video') {
+      closeTestimonyModal();
+      openVideoModal(prevTestimony);
+    } else {
+      openTestimonyModal(prevTestimony);
     }
   };
   
   nextBtn.onclick = () => {
-    if (currentIndex < testimonies.length - 1) {
-      const nextTestimony = testimonies[currentIndex + 1];
-      if (nextTestimony.type === 'video') {
-        closeTestimonyModal();
-        openVideoModal(nextTestimony);
-      } else {
-        openTestimonyModal(nextTestimony);
-      }
+    if (!hasMultiple) return;
+    const nextIndex = (currentIndex + 1) % testimonies.length;
+    const nextTestimony = testimonies[nextIndex];
+    if (nextTestimony.type === 'video') {
+      closeTestimonyModal();
+      openVideoModal(nextTestimony);
+    } else {
+      openTestimonyModal(nextTestimony);
     }
   };
   
@@ -113,24 +113,27 @@ function openVideoModal(testimony) {
   const amenCount = window.UTILS.getAmensForTestimony(testimony.id);
   const hasAmened = window.STATE.amenedTestimonies.has(testimony.id);
   
+  // Définir la couleur de la bande selon le post-it
+  const colorStrip = dialog.querySelector('.modal-color-strip');
+  if (colorStrip && testimony.color) {
+    const color = window.CONFIG.COLOR_MAP[testimony.color] || testimony.color;
+    colorStrip.style.background = color;
+  }
+  
   dialog.querySelector('.video-modal-title').textContent = testimony.title;
   
   const videoPlayer = dialog.querySelector('#videoPlayer');
   videoPlayer.src = testimony.videoUrl;
   
   dialog.querySelector('.video-author').textContent = testimony.author;
-  dialog.querySelector('.video-location').textContent = testimony.location;
-  dialog.querySelector('.video-date').textContent = testimony.date;
-  const videoBody = dialog.querySelector('.video-modal-body');
-  if (videoBody && window.UTILS) {
-    videoBody.style.background = window.UTILS.getPostItColor(testimony);
-    videoBody.style.fontFamily = window.UTILS.getFontFamilyValue(testimony);
-  }
+  dialog.querySelector('.video-location').textContent = testimony.location || 'Lieu non précisé';
+  dialog.querySelector('.video-date').textContent = testimony.date || '';
   
   const amenBtn = dialog.querySelector('.amen-button');
   amenBtn.dataset.testimonyId = testimony.id;
-  amenBtn.classList.toggle('active', hasAmened);
-  amenBtn.setAttribute('aria-pressed', hasAmened ? 'true' : 'false');
+  amenBtn.disabled = false;
+  amenBtn.classList.toggle('amen-active', hasAmened);
+  amenBtn.classList.remove('disabled');
   amenBtn.querySelector('.amen-count').textContent = amenCount;
   
   // Setup navigation
@@ -140,32 +143,33 @@ function openVideoModal(testimony) {
   const prevBtn = dialog.querySelector('.modal-prev');
   const nextBtn = dialog.querySelector('.modal-next');
   
-  prevBtn.disabled = currentIndex <= 0;
-  nextBtn.disabled = currentIndex >= testimonies.length - 1;
+  const hasMultiple = testimonies.length > 1;
+  prevBtn.disabled = !hasMultiple;
+  nextBtn.disabled = !hasMultiple;
   
   prevBtn.onclick = () => {
-    if (currentIndex > 0) {
-      const prevTestimony = testimonies[currentIndex - 1];
-      videoPlayer.pause();
-      closeVideoModal();
-      if (prevTestimony.type === 'video') {
-        openVideoModal(prevTestimony);
-      } else {
-        openTestimonyModal(prevTestimony);
-      }
+    if (!hasMultiple) return;
+    const prevIndex = (currentIndex - 1 + testimonies.length) % testimonies.length;
+    const prevTestimony = testimonies[prevIndex];
+    videoPlayer.pause();
+    closeVideoModal();
+    if (prevTestimony.type === 'video') {
+      openVideoModal(prevTestimony);
+    } else {
+      openTestimonyModal(prevTestimony);
     }
   };
   
   nextBtn.onclick = () => {
-    if (currentIndex < testimonies.length - 1) {
-      const nextTestimony = testimonies[currentIndex + 1];
-      videoPlayer.pause();
-      closeVideoModal();
-      if (nextTestimony.type === 'video') {
-        openVideoModal(nextTestimony);
-      } else {
-        openTestimonyModal(nextTestimony);
-      }
+    if (!hasMultiple) return;
+    const nextIndex = (currentIndex + 1) % testimonies.length;
+    const nextTestimony = testimonies[nextIndex];
+    videoPlayer.pause();
+    closeVideoModal();
+    if (nextTestimony.type === 'video') {
+      openVideoModal(nextTestimony);
+    } else {
+      openTestimonyModal(nextTestimony);
     }
   };
   
@@ -185,45 +189,32 @@ function closeVideoModal() {
   }
 }
 
-function openTestimonyForm() {
-  const dialog = document.getElementById('testimonyFormDialog');
-  const panel = document.getElementById('testimonyForm');
-  const isStandalonePanel = panel && (!dialog || !dialog.contains(panel)); // home.html overlay vs dialog form
-
-  if (isStandalonePanel) {
-    if (!panel.dataset.inited) {
-      if (window.FORM && typeof window.FORM.initializeTestimonyForm === 'function') {
-        try { window.FORM.initializeTestimonyForm(); panel.dataset.inited = '1'; } catch (e) { /* noop */ }
+function openTestimonyForm(force = false) {
+  const isAuthenticated = window.STATE && window.STATE.userName;
+  if (!force && !isAuthenticated) {
+    if (window.AUTH_OTP && typeof window.AUTH_OTP.ensureAuthThen === 'function') {
+      window.AUTH_OTP.ensureAuthThen(() => openTestimonyForm(true));
+    } else {
+      if (typeof window.showToast === 'function') {
+        window.showToast('Connectez-vous pour partager votre témoignage');
+      } else {
+        alert('Connectez-vous pour partager votre témoignage');
       }
     }
-    panel.classList.remove('hidden');
     return;
   }
-
+  const dialog = document.getElementById('testimonyFormDialog');
   if (dialog) {
-    if (!dialog.dataset.inited) {
-      if (window.FORM && typeof window.FORM.initializeTestimonyForm === 'function') {
-        try { window.FORM.initializeTestimonyForm(); dialog.dataset.inited = '1'; } catch (e) { /* noop */ }
-      }
-    }
     dialog.showModal();
   }
 }
 
 function closeTestimonyForm() {
   const dialog = document.getElementById('testimonyFormDialog');
-  const panel = document.getElementById('testimonyForm');
-  const isStandalonePanel = panel && (!dialog || !dialog.contains(panel));
-
-  if (isStandalonePanel) {
-    panel.classList.add('hidden');
-    if (window.FORM && window.FORM.resetForm) window.FORM.resetForm();
-    return;
-  }
-
   if (dialog) {
     dialog.close();
-    if (window.FORM && window.FORM.resetForm) window.FORM.resetForm();
+    // Reset form state
+    window.FORM.resetForm();
   }
 }
 
@@ -318,19 +309,3 @@ window.MODALS = {
   closeTestimonyForm,
   initializeModals
 };
-
-// Provide global helpers so inline onclick="openTestimonyForm()" works too
-if (!window.openTestimonyForm) {
-  window.openTestimonyForm = function(){
-    if (window.MODALS && typeof window.MODALS.openTestimonyForm === 'function') {
-      window.MODALS.openTestimonyForm();
-    }
-  };
-}
-if (!window.closeTestimonyForm) {
-  window.closeTestimonyForm = function(){
-    if (window.MODALS && typeof window.MODALS.closeTestimonyForm === 'function') {
-      window.MODALS.closeTestimonyForm();
-    }
-  };
-}

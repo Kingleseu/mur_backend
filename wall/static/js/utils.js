@@ -2,66 +2,27 @@
 // UTILITY FUNCTIONS
 // ================================================
 
-function getCSRFToken() {
-  const name = 'csrftoken=';
-  const parts = document.cookie ? document.cookie.split(';') : [];
-  for (let i = 0; i < parts.length; i += 1) {
-    const cookie = parts[i].trim();
-    if (cookie.indexOf(name) === 0) {
-      return cookie.substring(name.length);
-    }
-  }
-  return '';
-}
-
 function getAmensForTestimony(id) {
-  if (Object.prototype.hasOwnProperty.call(window.STATE.amenCounts, id)) {
+  if (typeof window.STATE.amenCounts[id] === 'number') {
     return window.STATE.amenCounts[id];
   }
-  const testimony = window.CONFIG.TESTIMONIES.find(t => t && t.id === id);
-  const fallback = testimony && typeof testimony.amen_count === 'number' ? testimony.amen_count : 0;
-  window.STATE.amenCounts[id] = fallback;
-  return fallback;
-}
-
-function getPostItColor(testimony) {
-  const defaultColor = (window.CONFIG && window.CONFIG.COLOR_MAP && window.CONFIG.COLOR_MAP.yellow) || '#FFF6D9';
-  if (!testimony) return defaultColor;
-  const raw = testimony.color || testimony.postit_color || defaultColor;
-  if (window.CONFIG && window.CONFIG.COLOR_MAP && window.CONFIG.COLOR_MAP[raw]) {
-    return window.CONFIG.COLOR_MAP[raw];
-  }
-  return raw || defaultColor;
-}
-
-function getFontFamilyValue(testimony) {
-  const fonts = (window.CONFIG && window.CONFIG.FONT_STYLES) || [];
-  const fallback = fonts[0]?.value || 'Inter, sans-serif';
-  if (!testimony) return fallback;
-
-  const fontName = testimony.font;
-  if (fontName) {
-    const match = fonts.find(f => f.name === fontName);
-    if (match) return match.value;
-  }
-
-  if (testimony.fontCSS) return testimony.fontCSS;
-  if (testimony.font_family) return testimony.font_family;
-
-  return fallback;
+  const testimony = (window.CONFIG.TESTIMONIES || []).find(t => t.id === id);
+  const count = testimony && typeof testimony.amen_count === 'number' ? testimony.amen_count : 0;
+  window.STATE.amenCounts[id] = count;
+  return count;
 }
 
 function getFilteredTestimonies() {
   const { TESTIMONIES } = window.CONFIG;
   const { selectedCategory } = window.STATE;
-
+  
   if (selectedCategory === 'Tous') {
     return TESTIMONIES;
-  }
-  if (selectedCategory === 'Vidéos') {
+  } else if (selectedCategory === 'Vidéos') {
     return TESTIMONIES.filter(t => t.type === 'video');
+  } else {
+    return TESTIMONIES.filter(t => t.category === selectedCategory);
   }
-  return TESTIMONIES.filter(t => t.category === selectedCategory);
 }
 
 function getCurrentPageTestimonies() {
@@ -82,7 +43,7 @@ function getTotalPages() {
 function animateCounter(element, target, duration = 2000) {
   const increment = target / (duration / 16);
   let current = 0;
-
+  
   const timer = setInterval(() => {
     current += increment;
     if (current >= target) {
@@ -115,89 +76,93 @@ function scrollToWall() {
   }
 }
 
-async function sendAmenRequest(id) {
-  const response = await fetch(`/api/testimonies/${id}/amen/`, {
+
+function getCSRFToken() {
+  const name = 'csrftoken=';
+  const cookies = document.cookie ? document.cookie.split(';') : [];
+  for (const cookieRaw of cookies) {
+    const cookie = cookieRaw.trim();
+    if (cookie.startsWith(name)) {
+      return cookie.substring(name.length);
+    }
+  }
+  return '';
+}
+
+function setAmenButtonsState(id, { count, liked, loading }) {
+  const buttons = document.querySelectorAll(`.amen-button[data-testimony-id="${id}"]`);
+  buttons.forEach(btn => {
+    if (typeof count === 'number') {
+      const span = btn.querySelector('.amen-count');
+      if (span) span.textContent = count;
+    }
+    if (typeof liked === 'boolean') {
+      btn.classList.toggle('amen-active', liked);
+    }
+    if (typeof loading === 'boolean') {
+      btn.disabled = loading;
+      btn.classList.toggle('disabled', loading);
+    }
+  });
+}
+
+async function toggleAmenRequest(id) {
+  const res = await fetch(`/api/testimonies/${id}/amen/`, {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       'X-CSRFToken': getCSRFToken()
     },
     credentials: 'same-origin'
   });
-  let payload = {};
+  let json = {};
   try {
-    payload = await response.json();
-  } catch (err) {
-    payload = {};
+    json = await res.json();
+  } catch (_) {}
+  if (!res.ok || json.ok === false) {
+    const msg = (json && (json.error || json.detail)) || '';
+    throw new Error(msg || `Erreur lors de l'action Amen (${res.status})`);
   }
-  if (!response.ok || payload.ok === false) {
-    const message = payload.detail || payload.error || `Impossible de dire Amen (HTTP ${response.status})`;
-    throw new Error(message);
-  }
-  return payload;
-}
-
-function updateAmenButtonsUI(buttons, count, liked) {
-  buttons.forEach(btn => {
-    const countSpan = btn.querySelector('.amen-count');
-    if (countSpan) {
-      countSpan.textContent = count;
-    }
-    btn.disabled = false;
-    btn.classList.remove('disabled');
-    btn.classList.toggle('active', liked);
-    btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
-  });
+  return json;
 }
 
 async function handleAmen(id, event) {
-  const amenButtons = document.querySelectorAll(`.amen-button[data-testimony-id="${id}"]`);
-  if (!amenButtons.length) return;
-
-  amenButtons.forEach(btn => {
-    btn.disabled = true;
-    btn.classList.add('disabled');
-  });
-
+  const currentCount = getAmensForTestimony(id);
+  setAmenButtonsState(id, { count: currentCount, loading: true });
   try {
-    const payload = await sendAmenRequest(id);
-    const newCount = typeof payload.amen_count === 'number'
-      ? payload.amen_count
-      : getAmensForTestimony(id);
-    const liked = !!payload.liked;
-
-    window.STATE.amenCounts[id] = newCount;
-    const testimony = window.CONFIG.TESTIMONIES.find(t => t && t.id === id);
-    if (testimony) testimony.amen_count = newCount;
-
+    const result = await toggleAmenRequest(id);
+    const { amen_count, liked } = result;
+    window.STATE.amenCounts[id] = amen_count;
+    const testimony = (window.CONFIG.TESTIMONIES || []).find(t => t.id === id);
+    if (testimony) testimony.amen_count = amen_count;
     if (liked) {
       window.STATE.amenedTestimonies.add(id);
     } else {
       window.STATE.amenedTestimonies.delete(id);
     }
     window.saveAmenedTestimonies();
+    setAmenButtonsState(id, { count: amen_count, liked, loading: false });
 
-    updateAmenButtonsUI(amenButtons, newCount, liked);
-
-    if (liked && event && event.target && typeof event.target.getBoundingClientRect === 'function') {
-      const rect = event.target.getBoundingClientRect();
-      const x = (rect.left + rect.width / 2) / window.innerWidth;
-      const y = (rect.top + rect.height / 2) / window.innerHeight;
-      triggerConfetti(x, y);
+    if (liked && event) {
+      const btn = event.target.closest('.amen-button');
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        const x = (rect.left + rect.width / 2) / window.innerWidth;
+        const y = (rect.top + rect.height / 2) / window.innerHeight;
+        triggerConfetti(x, y);
+      }
     }
 
     window.dispatchEvent(new CustomEvent('amenClicked', {
-      detail: { testimonyId: id, amenCount: newCount }
+      detail: { testimonyId: id, liked, amenCount: amen_count }
     }));
   } catch (error) {
-    amenButtons.forEach(btn => {
-      btn.disabled = false;
-      btn.classList.remove('disabled');
-    });
     if (window.showToast) {
-      window.showToast(error.message || 'Impossible de dire Amen');
+      window.showToast(error.message || 'Impossible de traiter votre Amen');
     } else {
-      alert(error.message || 'Impossible de dire Amen');
+      alert(error.message || 'Impossible de traiter votre Amen');
     }
+    setAmenButtonsState(id, { loading: false });
   }
 }
 
@@ -214,27 +179,23 @@ function handleShare(testimony, platform) {
       break;
     case 'copy':
       navigator.clipboard.writeText(url).then(() => {
-        if (window.showToast) window.showToast('Lien copié !');
-        else alert('Lien copié !');
+        alert('Lien copié !');
       });
       break;
-    default:
-      break;
   }
-
-  window.dispatchEvent(new CustomEvent('testimonyShared', {
-    detail: {
+  
+  // Déclencher l'événement pour mettre à jour les stats
+  window.dispatchEvent(new CustomEvent('testimonyShared', { 
+    detail: { 
       testimonyId: testimony.id,
-      platform
-    }
+      platform: platform 
+    } 
   }));
 }
 
+// Export functions
 window.UTILS = {
-  getCSRFToken,
   getAmensForTestimony,
-  getPostItColor,
-  getFontFamilyValue,
   getFilteredTestimonies,
   getCurrentPageTestimonies,
   getTotalPages,

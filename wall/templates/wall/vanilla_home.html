@@ -11,12 +11,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Indie+Flower&family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Permanent+Marker&family=Shadows+Into+Light&family=Patrick+Hand&display=swap" rel="stylesheet">
   
-  <!-- Styles (served via STATICFILES_DIRS: mur-temoignage-vanilla) -->
+  <!-- Styles -->
   <link rel="stylesheet" href="{% static 'styles-final.css' %}">
   <link rel="stylesheet" href="{% static 'css/form.css' %}">
   <link rel="stylesheet" href="{% static 'css/carousel-video.css' %}">
-  <link rel="stylesheet" href="{% static 'css/corrections-v2.css' %}">
   <link rel="stylesheet" href="{% static 'css/footer-cta-v3.css' %}">
+  <link rel="stylesheet" href="{% static 'css/modal-color-strip.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dialog-fix.css' %}">
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head> 
 <body>
 
@@ -37,18 +41,18 @@
         <!-- LEFT: Text Content -->
         <div class="hero-text">
           <div class="hero-logo">
-            <img src="{% static 'img/logob21.svg' %}" alt="Bunda21 Logo" class="logo-img">
+            <img src="{% static 'img/logo-b21.svg' %}" alt="Bunda21 Logo" class="logo-img">
           </div>
           
           <h2 class="hero-title">Ce que Dieu a fait pour nous !</h2>
           <h3 class="hero-subtitle">Partagé, conservé, célébré.</h3>
           
           <p class="hero-description">
-           Un espace vivant où chaque fidèle partage son action de grâce. 
-            Découvrez comment Dieu transforme des vies au quotidien.
+            Un espace vivant où chaque fidèle partage son action de grâce et proclame, comme il est écrit :
+            <strong>« Ils l'ont vaincu à cause de la parole de leur témoignage » (Apocalypse 12:11).</strong>
           </p>
           
-          <button class="cta-button" id="heroCTA" onclick="openTestimonyForm()">
+          <button class="cta-button" id="heroCTA">
             J'ai un témoignage
           </button>
           
@@ -89,7 +93,7 @@
             <h2 class="wall-title">Mur en direct</h2>
             <p class="wall-subtitle">Aperçu temps réel des actions de grâce publiées.</p>
           </div>
-          <button class="add-testimony-btn" id="addTestimonyBtn" onclick="openTestimonyForm()">
+          <button class="add-testimony-btn" id="addTestimonyBtn">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -104,6 +108,7 @@
 
       <!-- Testimonies Grid -->
       <div class="testimonies-grid" id="testimoniesGrid"></div>
+      <!-- /Testimonies Grid -->
 
       <!-- Pagination -->
       <div class="pagination" id="pagination"></div>
@@ -191,7 +196,7 @@
         </div>
       </div>
 
-      <button class="footer-cta-button" id="footerCTA" onclick="openTestimonyForm()">
+      <button class="footer-cta-button" id="footerCTA">
           Écrire mon témoignage
       </button>
 
@@ -208,6 +213,7 @@
   <!-- Auth Modal -->
   <!-- Auth Dialog -->
   <dialog id="otpAuthDialog" class="modal auth-modal">
+    <div class="modal-color-strip"></div>
     <div class="modal-content auth-modal-card">
       <div class="modal-header">
         <div>
@@ -276,6 +282,9 @@
   <!-- Testimony Modal (Text) -->
   <!-- Testimony Dialog (Texte) -->
   <dialog id="testimonyDialog" class="modal testimony-modal">
+   
+     <div class="modal-color-strip"></div>
+
     <div class="modal-content">
       <div class="modal-header">
         <button class="modal-nav-btn modal-prev" type="button">
@@ -336,6 +345,7 @@
   <!-- Video Modal -->
   <!-- Video Dialog -->
   <dialog id="videoDialog" class="modal video-modal">
+    <div class="modal-color-strip"></div> 
     <div class="modal-content">
       <div class="modal-header">
         <button class="modal-nav-btn modal-prev" type="button">
@@ -360,7 +370,7 @@
         </div>
         <div class="testimony-actions">
           <button class="amen-button" type="button">
-            <span>🙌</span>
+            <span>??</span>
             Amen (<span class="amen-count">0</span>)
           </button>
           <div class="share-buttons">
@@ -391,165 +401,192 @@
 
   <!-- Testimony Form Modal -->
   <dialog id="testimonyFormDialog" class="modal">
-    <div class="modal-content testimony-form-modal-large">
-      <div class="modal-header">
-        <div>
-          <h2 class="modal-title">Partagez votre témoignage</h2>
-          <p class="modal-subtitle">Racontez-nous comment Dieu a agi dans votre vie. Votre histoire sera vérifiée avant d'être publiée.</p>
+  <div class="modal-color-strip"></div>
+
+  <div class="modal-content testimony-form-modal-large">
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">Partagez votre témoignage</h2>
+        <p class="modal-subtitle">Racontez-nous comment Dieu a agi dans votre vie. Votre histoire sera vérifiée avant d'être publiée.</p>
+      </div>
+      <button class="modal-close" type="button">&times;</button>
+    </div>
+
+      <form id="testimonyForm" class="testimony-form-complete" novalidate>
+      <!-- Type de témoignage -->
+      <div class="form-group">
+        <label>Type de témoignage</label>
+        <div class="tabs-container" id="typeTabs" role="tablist" aria-label="Type de témoignage">
+          <!-- pastille glissante -->
+          <span class="tab-indicator" aria-hidden="true"></span>
+          <button type="button" class="tab-btn active" data-type="text"
+                  role="tab" aria-selected="true" aria-controls="textTestimonySection">
+            <i data-lucide="file-text" style="width:16px;height:16px;vertical-align:-2px"></i>&nbsp;Texte & Photos
+          </button>
+          <button type="button" class="tab-btn" data-type="video"
+                  role="tab" aria-selected="false" aria-controls="videoTestimonySection">
+            <i data-lucide="video" style="width:16px;height:16px;vertical-align:-2px"></i>&nbsp;Vidéo
+          </button>
         </div>
-        <button class="modal-close" type="button">&times;</button>
       </div>
 
-      <form id="testimonyForm" class="testimony-form-complete">
-        <!-- Type de témoignage -->
-        <div class="form-group">
-          <label>Type de témoignage</label>
-          <div class="tabs-container">
-            <button type="button" class="tab-btn active" data-type="text">
-              📝 Texte & Photos
-            </button>
-            <button type="button" class="tab-btn" data-type="video">
-              🎥 Vidéo
-            </button>
-          </div>
-        </div>
+      <!-- Titre -->
+      <div class="form-group">
+        <label for="formTitle">Titre du témoignage *</label>
+        <input type="text" id="formTitle" class="form-input" placeholder="Ex: Guérison miraculeuse" required>
+      </div>
 
-        <!-- Titre -->
-        <div class="form-group">
-          <label for="formTitle">Titre du témoignage *</label>
-          <input type="text" id="formTitle" class="form-input" placeholder="Ex: Guérison miraculeuse" required>
-        </div>
-        <!-- Catégorie -->
-        <div class="form-group">
-          <label for="formCategory">Catégorie</label>
-          <select id="formCategory" class="form-input"></select>
-        </div>
-        <div class="form-group">
-        </div>
+      <!-- Catégorie -->
+      <div class="form-group">
+        <label for="formCategory">Catégorie *</label>
+        <select id="formCategory" class="form-input" required></select>
+      </div>
+      <div class="form-group hidden" id="customCategoryGroup">
+        <label for="formCategoryCustom">Précisez la catégorie</label>
+        <input type="text" id="formCategoryCustom" class="form-input" placeholder="Ex: Mariage, Études..." autocomplete="off">
+        <p class="form-hint">Lorsque vous choisissez « Autre », indiquez ici le nom de votre catégorie.</p>
+      </div>
 
-        <!-- Section TEXTE -->
-        <div id="textTestimonySection" class="testimony-section">
-          <div class="form-group">
-            <label>Votre témoignage *</label>
-            <div id="postItPreview" class="postit-preview">
-              <div class="postit-controls">
-                <!-- Font selector -->
-                <div style="position: relative;">
-                  <button type="button" id="fontSelector" class="control-btn">Aa</button>
-                  <div id="fontPopover" class="popover hidden">
-                    <h4>Style de police</h4>
-                    <div class="font-grid">
-                      <button type="button" class="font-option active" data-font="Inter" style="font-family: Inter, sans-serif;">Aa</button>
-                      <button type="button" class="font-option" data-font="Merriweather" style="font-family: Merriweather, serif;">Aa</button>
-                      <button type="button" class="font-option" data-font="Indie Flower" style="font-family: 'Indie Flower', cursive;">Aa</button>
-                      <button type="button" class="font-option" data-font="Caveat" style="font-family: Caveat, cursive;">Aa</button>
-                      <button type="button" class="font-option" data-font="Patrick Hand" style="font-family: 'Patrick Hand', cursive;">Aa</button>
-                      <button type="button" class="font-option" data-font="Kalam" style="font-family: Kalam, cursive;">Aa</button>
-                      <button type="button" class="font-option" data-font="Permanent Marker" style="font-family: 'Permanent Marker', cursive;">Aa</button>
-                      <button type="button" class="font-option" data-font="Shadows Into Light" style="font-family: 'Shadows Into Light', cursive;">Aa</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Color selector -->
-                <div style="position: relative;">
-                  <button type="button" id="colorSelector" class="control-btn">🎨</button>
-                  <div id="colorPopover" class="popover hidden">
-                    <h4>Couleur du post-it</h4>
-                    <div class="color-grid">
-                      <button type="button" class="color-option active" data-color="#FFF6D9" style="background: #FFF6D9; border-color: #F5D693;"></button>
-                      <button type="button" class="color-option" data-color="#FFE5E5" style="background: #FFE5E5; border-color: #FFD6DC;"></button>
-                      <button type="button" class="color-option" data-color="#E4FFEB" style="background: #E4FFEB; border-color: #B8E6C3;"></button>
-                      <button type="button" class="color-option" data-color="#F3E5F5" style="background: #F3E5F5; border-color: #E1BEE7;"></button>
-                      <button type="button" class="color-option" data-color="#FFE0B2" style="background: #FFE0B2; border-color: #FFCC80;"></button>
-                      <button type="button" class="color-option" data-color="#E3F2FD" style="background: #E3F2FD; border-color: #BBDEFB;"></button>
-                      <button type="button" class="color-option" data-color="#FFE0E0" style="background: #FFE0E0; border-color: #FFCDD2;"></button>
-                      <button type="button" class="color-option" data-color="#E0F7FA" style="background: #E0F7FA; border-color: #B2EBF2;"></button>
-                    </div>
+      <!-- Section TEXTE -->
+      <div id="textTestimonySection" class="testimony-section" role="tabpanel" aria-labelledby="text-tab">
+        <div class="form-group">
+          <label>Votre témoignage *</label>
+          <div id="postItPreview" class="postit-preview">
+            <div class="postit-controls">
+              <!-- Font selector -->
+              <div style="position: relative;">
+                <button type="button" id="fontSelector" class="control-btn" aria-label="Choisir la police">
+                  <span id="fontSelectorLabel" class="icon-aa">Aa</span>
+                </button>
+                <div id="fontPopover" class="popover hidden">
+                  <h4>Style de police</h4>
+                  <div class="font-grid">
+                    <button type="button" class="font-option active" data-font="Sans-serif" style="font-family: Inter, sans-serif;">Aa</button>
+                    <button type="button" class="font-option" data-font="Serif" style="font-family: Merriweather, serif;">Aa</button>
+                    <button type="button" class="font-option" data-font="Indie Flower" style="font-family: 'Indie Flower', cursive;">Aa</button>
+                    <button type="button" class="font-option" data-font="Caveat" style="font-family: Caveat, cursive;">Aa</button>
+                    <button type="button" class="font-option" data-font="Patrick Hand" style="font-family: 'Patrick Hand', cursive;">Aa</button>
+                    <button type="button" class="font-option" data-font="Kalam" style="font-family: Kalam, cursive;">Aa</button>
+                    <button type="button" class="font-option" data-font="Permanent Marker" style="font-family: 'Permanent Marker', cursive;">Aa</button>
+                    <button type="button" class="font-option" data-font="Shadows Into Light" style="font-family: 'Shadows Into Light', cursive;">Aa</button>
                   </div>
                 </div>
               </div>
 
-              <textarea id="formTestimony" placeholder="Partagez en détail comment Dieu est intervenu dans votre vie..." required></textarea>
+              <!-- Color selector -->
+              <div style="position: relative;">
+                <button type="button" id="colorSelector" class="control-btn"><i data-lucide="palette" style="width:18px;height:18px"></i></button>
+                <div id="colorPopover" class="popover hidden">
+                  <h4>Couleur du post-it</h4>
+                  <div class="color-grid">
+                    <button type="button" class="color-option active" data-color="#FFF6D9" style="background: #FFF6D9; border-color: #F5D693;"></button>
+                    <button type="button" class="color-option" data-color="#FFE5E5" style="background: #FFE5E5; border-color: #FFD6DC;"></button>
+                    <button type="button" class="color-option" data-color="#E4FFEB" style="background: #E4FFEB; border-color: #B8E6C3;"></button>
+                    <button type="button" class="color-option" data-color="#F3E5F5" style="background: #F3E5F5; border-color: #E1BEE7;"></button>
+                    <button type="button" class="color-option" data-color="#FFE0B2" style="background: #FFE0B2; border-color: #FFCC80;"></button>
+                    <button type="button" class="color-option" data-color="#E3F2FD" style="background: #E3F2FD; border-color: #BBDEFB;"></button>
+                    <button type="button" class="color-option" data-color="#FFE0E0" style="background: #FFE0E0; border-color: #FFCDD2;"></button>
+                    <button type="button" class="color-option" data-color="#E0F7FA" style="background: #E0F7FA; border-color: #B2EBF2;"></button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p class="char-count"><span id="charCount">0</span> caractères</p>
-          </div>
 
-          <!-- Upload photos -->
-          <div class="form-group">
-            <div class="upload-header">
-              <label>Photos (optionnel, max 5)</label>
-              <button type="button" id="uploadPhotosBtn" class="upload-btn">
-                📷 Ajouter des photos
-              </button>
-              <input type="file" id="photoInput" accept="image/*" multiple hidden>
+            <div class="testimony-textarea-wrapper">
+              <textarea id="formTestimony" name="testimony_text" placeholder="Partagez en détail comment Dieu est intervenu dans votre vie..." required></textarea>
             </div>
-            <div id="photosPreview" class="photos-grid"></div>
           </div>
+          <p class="char-count"><span id="charCount">0</span> caractères</p>
         </div>
 
-        <!-- Section VIDÉO -->
-        <div id="videoTestimonySection" class="testimony-section hidden">
-          <div class="form-group">
-            <label>Vidéo de témoignage (max 2 minutes) *</label>
+        <!-- Upload photos -->
+        <div class="form-group">
+          <div class="upload-header">
+            <label>Photos (optionnel, max 5)</label>
+            <button type="button" id="uploadPhotosBtn" class="upload-btn"><i data-lucide="camera" style="width:16px;height:16px"></i>&nbsp;Ajouter des photos</button>
+            <input type="file" id="photoInput" accept="image/*" multiple hidden>
+          </div>
+          <div id="photosPreview" class="photos-grid"></div>
+        </div>
+      </div>
 
-            <div id="videoUploadOptions" class="video-options">
-              <button type="button" id="recordVideoBtn" class="video-option-btn">
-                <div class="option-icon">📹</div>
-                <div class="option-text">
-                  <strong>Enregistrer maintenant</strong>
-                  <span>Utiliser ma caméra</span>
-                </div>
-              </button>
+      <!-- Section VIDÉO -->
+      <div id="videoTestimonySection" class="testimony-section hidden" role="tabpanel" aria-labelledby="video-tab">
+        <div class="form-group">
+          <label>Vidéo de témoignage (max 2 minutes) *</label>
 
-              <button type="button" id="uploadVideoBtn" class="video-option-btn">
-                <div class="option-icon">📤</div>
-                <div class="option-text">
-                  <strong>Uploader une vidéo</strong>
-                  <span>Depuis mon appareil</span>
-                </div>
-              </button>
-              <input type="file" id="videoInput" accept="video/*" hidden>
-            </div>
+          <div id="videoUploadOptions" class="video-options">
+            <button type="button" id="recordVideoBtn" class="video-option-btn">
+              <div class="option-icon"><i data-lucide="camera" style="width:26px;height:26px"></i></div>
+              <div class="option-text">
+                <strong>Enregistrer maintenant</strong>
+                <span>Utiliser ma caméra</span>
+              </div>
+            </button>
 
-            <!-- Recording -->
-            <div id="recordingSection" class="recording-section hidden">
-              <video id="recordingPreview" autoplay muted></video>
-              <div class="recording-controls">
+            <button type="button" id="uploadVideoBtn" class="video-option-btn">
+              <div class="option-icon"><i data-lucide="upload" style="width:26px;height:26px"></i></div>
+              <div class="option-text">
+                <strong>Uploader une vidéo</strong>
+                <span>Depuis mon appareil</span>
+              </div>
+            </button>
+            <input type="file" id="videoInput" accept="video/*" hidden>
+          </div>
+
+          <!-- Recording -->
+          <div id="recordingSection" class="recording-section hidden" data-max-seconds="120">
+            <video id="recordingPreview" autoplay muted></video>
+
+            <div class="recording-controls">
+              <div class="recording-status">
                 <div class="recording-indicator">
                   <span class="recording-dot"></span>
                   Enregistrement en cours...
                 </div>
-                <button type="button" id="stopRecordingBtn" class="stop-btn">
-                  Arrêter l'enregistrement
-                </button>
-              </div>
-            </div>
 
-            <!-- Preview -->
-            <div id="videoPreviewSection" class="video-preview-section hidden">
-              <video id="videoPreviewPlayer" controls></video>
-              <button type="button" id="replaceVideoBtn" class="replace-btn">
-                Remplacer la vidéo
+                <!-- TIMER visuel -->
+                <div class="rec-timer-inline" aria-live="polite">
+                  <svg class="rec-ring" viewBox="0 0 44 44">
+                    <circle class="ring-bg" cx="22" cy="22" r="20"></circle>
+                    <circle class="ring-fg" cx="22" cy="22" r="20"></circle>
+                  </svg>
+                  <div class="rec-time">
+                    <span id="recMinutes">02</span>:<span id="recSeconds">00</span>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" id="stopRecordingBtn" class="stop-btn">
+                Arrêter
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Info note -->
-        <div class="info-note">
-          ℹ️ <strong>Note:</strong> Votre témoignage sera examiné par l'équipe du CMP avant publication 
-          pour s'assurer de sa véracité et de son édification pour la communauté.
+          <!-- Preview -->
+          <div id="videoPreviewSection" class="video-preview-section hidden">
+            <video id="videoPreviewPlayer" controls></video>
+            <button type="button" id="replaceVideoBtn" class="replace-btn">
+              Remplacer la vidéo
+            </button>
+          </div>
         </div>
+      </div>
 
-        <!-- Actions -->
-        <div class="form-actions">
-          <button type="button" class="cancel-btn" id="formCancelBtn">Annuler</button>
-          <button type="submit" class="submit-btn">Soumettre mon témoignage</button>
-        </div>
-      </form>
-    </div>
-  </dialog>
+      <!-- Info note -->
+      <div class="info-note">
+        <i data-lucide="info" style="width:16px;height:16px;vertical-align:-2px"></i>&nbsp;<strong>Note:</strong> Votre témoignage sera examiné par l'équipe du CMP avant publication 
+        pour s'assurer de sa véracité et de son édification pour la communauté.
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="button" class="cancel-btn" id="formCancelBtn">Annuler</button>
+        <button type="submit" class="submit-btn">Soumettre mon témoignage</button>
+      </div>
+    </form>
+  </div>
+</dialog>
 
   <!-- ============================================
        SCRIPTS
@@ -580,5 +617,26 @@
   <!-- Corrections finales (DOIT ÃŠTRE EN DERNIER) -->
   <script src="{% static 'js/corrections-v2.js' %}"></script>
 
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+
+        window.lucide.createIcons();
+
+      }
+
+    });
+
+  </script>
+
+
+
 </body>
 </html>
+
+
+
+
+

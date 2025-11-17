@@ -4,7 +4,7 @@
 
 const state = {
   userName: localStorage.getItem('bunda21_user') || null,
-  userEmail: '',
+  userLocation: localStorage.getItem('bunda21_user_location') || null,
   selectedCategory: 'Tous',
   currentPage: 1,
   amenCounts: {},
@@ -25,11 +25,13 @@ const state = {
   isCarouselPaused: false
 };
 
+// Seed amen counts with the real values we got from the backend so
+// counters start with consistent data instead of placeholder values.
 if (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES)) {
-  window.CONFIG.TESTIMONIES.forEach((testimony) => {
-    if (!testimony || typeof testimony.id === 'undefined') return;
-    const count = typeof testimony.amen_count === 'number' ? testimony.amen_count : 0;
-    state.amenCounts[testimony.id] = count;
+  window.CONFIG.TESTIMONIES.forEach(testimony => {
+    if (typeof testimony.amen_count === 'number') {
+      state.amenCounts[testimony.id] = testimony.amen_count;
+    }
   });
 }
 
@@ -41,3 +43,4 @@ function saveAmenedTestimonies() {
 // Export state
 window.STATE = state;
 window.saveAmenedTestimonies = saveAmenedTestimonies;
+

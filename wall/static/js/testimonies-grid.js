@@ -7,38 +7,94 @@ function renderTestimoniesGrid() {
   if (!grid) return;
   
   const testimonies = window.UTILS.getCurrentPageTestimonies();
+  const totalPages = window.UTILS.getTotalPages();
+  const isLastPage = window.STATE.currentPage === totalPages;
   
-  grid.innerHTML = testimonies.map((testimony, index) => {
+  // Générer le HTML des cartes de témoignage
+  const testimoniesHTML = testimonies.map((testimony, index) => {
     if (testimony.type === 'video') {
       return renderVideoCard(testimony, index);
     } else {
       return renderTextCard(testimony, index);
     }
-  }).join('') + renderAddCard();
+  }).join('');
+  
+  // Ajouter la carte "Ajouter un témoignage" seulement sur la dernière page et à la fin
+  grid.innerHTML = testimoniesHTML + (isLastPage ? renderAddCard() : '');
   
   // Add event listeners
   addGridEventListeners();
+  
+  // Déclencher un événement pour que les enhancements puissent réagir
+  window.dispatchEvent(new CustomEvent('testimoniesRendered'));
+}
+
+function resolveCardColor(rawColor) {
+  if (!rawColor) {
+    return '#FFF6D9';
+  }
+  const map = (window.CONFIG && window.CONFIG.COLOR_MAP) || {};
+  return map[rawColor] || rawColor;
+}
+
+function resolveFontFamily(fontName) {
+  const styles = (window.CONFIG && window.CONFIG.FONT_STYLES) || [];
+  if (!fontName && styles.length > 0) {
+    return styles[0].value;
+  }
+  const match = styles.find(style => style.name === fontName);
+  if (match) {
+    return match.value;
+  }
+  if (fontName) {
+    return fontName;
+  }
+  return 'Inter, sans-serif';
+}
+
+function hasAttachedImages(testimony) {
+  return Array.isArray(testimony?.images) && testimony.images.length > 0;
+}
+
+function getPrimaryImageUrl(testimony) {
+  if (!testimony) return '';
+  if (testimony.thumbnail) return testimony.thumbnail;
+  if (hasAttachedImages(testimony)) {
+    return testimony.images[0];
+  }
+  return '';
+}
+
+function renderImagePreview(testimony) {
+  const url = getPrimaryImageUrl(testimony);
+  if (!url) return '';
+  const remaining = hasAttachedImages(testimony) ? Math.max(0, testimony.images.length - 1) : 0;
+  const badge = remaining > 0 ? `<span class="testimony-media-count">+${remaining}</span>` : '';
+  const safeTitle = testimony.title ? testimony.title.replace(/"/g, '&quot;') : 'Illustration témoignage';
+  return `
+    <div class="testimony-card-media">
+      <img src="${url}" alt="${safeTitle}">
+      ${badge}
+    </div>
+  `;
 }
 
 function renderTextCard(testimony, index) {
   const rotation = (Math.random() - 0.5) * 6;
-  const bgColor = window.UTILS.getPostItColor(testimony);
-  const fontFamily = window.UTILS.getFontFamilyValue(testimony);
+  const bgColor = resolveCardColor(testimony.color);
+  const fontFamily = resolveFontFamily(testimony.font);
   const amenCount = window.UTILS.getAmensForTestimony(testimony.id);
   const hasAmened = window.STATE.amenedTestimonies.has(testimony.id);
   const staggerClass = `stagger-${index % 9}`;
-  const firstImage = Array.isArray(testimony.images) && testimony.images.length
-    ? (typeof testimony.images[0] === 'string' ? testimony.images[0] : (testimony.images[0] && testimony.images[0].url))
-    : null;
-  const imageBlock = firstImage
-    ? `<div class="testimony-card-photo"><img src="${firstImage}" alt="${testimony.title}"></div>`
-    : '';
+  const mediaHtml = renderImagePreview(testimony);
+  const hasMedia = Boolean(mediaHtml);
   
   return `
     <div class="testimony-card ${staggerClass}" 
-         style="background: ${bgColor}; transform: rotate(${rotation}deg);" 
+        style="background: ${bgColor}; transform: rotate(${rotation}deg);"  
          data-testimony-id="${testimony.id}"
-         data-type="text">
+         data-type="text"
+         data-has-media="${hasMedia ? '1' : '0'}">
       <div class="testimony-pin">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="17" x2="12" y2="3"></line>
@@ -46,11 +102,11 @@ function renderTextCard(testimony, index) {
           <path d="M19 21 H5"></path>
         </svg>
       </div>
+      ${mediaHtml}
       
       <div class="testimony-card-content" style="font-family: ${fontFamily};">
         <h3 class="testimony-card-title">${testimony.title}</h3>
         <p class="testimony-card-text">${testimony.text || testimony.fullText.substring(0, 120) + '...'}</p>
-        ${imageBlock}
         <p class="testimony-card-author">- ${testimony.author}</p>
         <div class="testimony-card-meta">
           <span class="testimony-card-location">${testimony.location}</span>
@@ -59,9 +115,8 @@ function renderTextCard(testimony, index) {
       </div>
       
       <div class="testimony-card-actions">
-        <button class="amen-button ${hasAmened ? 'active' : ''}" 
-                data-testimony-id="${testimony.id}" 
-                aria-pressed="${hasAmened}">
+        <button class="amen-button ${hasAmened ? 'amen-active' : ''}" 
+                data-testimony-id="${testimony.id}">
           <span>🙌</span>
           Amen (<span class="amen-count">${amenCount}</span>)
         </button>
@@ -93,19 +148,25 @@ function renderTextCard(testimony, index) {
 
 function renderVideoCard(testimony, index) {
   const rotation = (Math.random() - 0.5) * 6;
-  const bgColor = window.UTILS.getPostItColor(testimony);
+  const bgColor = resolveCardColor(testimony.color);
+  const fontFamily = resolveFontFamily(testimony.font);
   const amenCount = window.UTILS.getAmensForTestimony(testimony.id);
   const hasAmened = window.STATE.amenedTestimonies.has(testimony.id);
   const staggerClass = `stagger-${index % 9}`;
-  const fontFamily = window.UTILS.getFontFamilyValue(testimony);
-  const thumbnail = testimony.thumbnail || window.CONFIG.DEFAULT_VIDEO_THUMBNAIL || '';
-  const duration = testimony.duration || '';
+  const coverUrl = getPrimaryImageUrl(testimony);
+  const hasCover = Boolean(coverUrl);
+  const mediaMarkup = hasCover
+    ? `<img src="${coverUrl}" alt="${testimony.title || 'Miniature vidéo'}" class="video-thumbnail video-thumbnail-img">`
+    : `<video class="video-thumbnail" muted autoplay loop playsinline>
+         <source src="${testimony.videoUrl}" type="video/mp4">
+       </video>`;
   
   return `
     <div class="testimony-card video-card ${staggerClass}" 
-         style="background: ${bgColor}; transform: rotate(${rotation}deg);" 
+        style="background: ${bgColor}; transform: rotate(${rotation}deg);" 
          data-testimony-id="${testimony.id}"
-         data-type="video">
+         data-type="video"
+         data-has-media="1">
       <div class="testimony-pin">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
           <line x1="12" y1="17" x2="12" y2="3"></line>
@@ -115,7 +176,7 @@ function renderVideoCard(testimony, index) {
       </div>
       
       <div class="video-thumbnail-wrapper">
-        <img src="${thumbnail}" alt="${testimony.title}" class="video-thumbnail">
+        ${mediaMarkup}
         <div class="video-play-overlay">
           <div class="video-play-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -123,7 +184,7 @@ function renderVideoCard(testimony, index) {
             </svg>
           </div>
         </div>
-        <div class="video-duration">${duration}</div>
+        <div class="video-duration">${testimony.duration}</div>
       </div>
       
       <div class="testimony-card-content" style="font-family: ${fontFamily};">
@@ -136,9 +197,8 @@ function renderVideoCard(testimony, index) {
       </div>
       
       <div class="testimony-card-actions">
-        <button class="amen-button ${hasAmened ? 'active' : ''}" 
-                data-testimony-id="${testimony.id}" 
-                aria-pressed="${hasAmened}">
+        <button class="amen-button ${hasAmened ? 'amen-active' : ''}" 
+                data-testimony-id="${testimony.id}">
           <span>🙌</span>
           Amen (<span class="amen-count">${amenCount}</span>)
         </button>
@@ -278,6 +338,14 @@ function renderPagination() {
   
   const totalPages = window.UTILS.getTotalPages();
   const { currentPage } = window.STATE;
+
+  if (totalPages <= 1) {
+    pagination.innerHTML = '';
+    pagination.classList.add('hidden');
+    return;
+  }
+
+  pagination.classList.remove('hidden');
   
   pagination.innerHTML = `
     <button class="pagination-btn" id="prevPage" ${currentPage <= 1 ? 'disabled' : ''}>

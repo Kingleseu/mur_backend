@@ -2,10 +2,15 @@
 // HERO CAROUSEL AVEC ACTIONS ET INTERACTIVITÉ
 // ================================================
 
+function resolveCarouselColor(color) {
+  if (!color) return '#FFF6D9';
+  const map = (window.CONFIG && window.CONFIG.COLOR_MAP) || {};
+  return map[color] || color;
+}
+
 function renderCarouselCard(testimony, index) {
   const rotation = (Math.random() - 0.5) * 6;
-  const bgColor = window.UTILS.getPostItColor(testimony);
-  const fontFamily = window.UTILS.getFontFamilyValue(testimony);
+  const bgColor = resolveCarouselColor(testimony.color);
   const amenCount = window.UTILS.getAmensForTestimony(testimony.id);
   const hasAmened = window.STATE.amenedTestimonies.has(testimony.id);
   
@@ -24,18 +29,23 @@ function renderCarouselCard(testimony, index) {
         </div>
         
         <div class="video-thumbnail-wrapper">
-          <img src="${testimony.thumbnail}" alt="${testimony.title}" class="video-thumbnail">
+          <video class="video-thumbnail" muted autoplay loop playsinline>
+            <source src="${testimony.videoUrl}" type="video/mp4">
+          </video>
+
           <div class="video-play-overlay">
             <div class="video-play-button">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
               </svg>
             </div>
           </div>
+
           <div class="video-duration">${testimony.duration}</div>
         </div>
+
         
-        <div class="testimony-card-content" style="font-family: ${fontFamily};">
+        <div class="testimony-card-content">
           <h3 class="testimony-card-title">${testimony.title}</h3>
           <p class="testimony-card-author">- ${testimony.author}</p>
           <div class="testimony-card-meta">
@@ -45,9 +55,8 @@ function renderCarouselCard(testimony, index) {
         </div>
         
         <div class="testimony-card-actions">
-          <button class="amen-button ${hasAmened ? 'active' : ''}" 
-                  data-testimony-id="${testimony.id}" 
-                  aria-pressed="${hasAmened}">
+          <button class="amen-button ${hasAmened ? 'amen-active' : ''}" 
+                  data-testimony-id="${testimony.id}">
             <span>🙌</span>
             Amen (<span class="amen-count">${amenCount}</span>)
           </button>
@@ -89,7 +98,7 @@ function renderCarouselCard(testimony, index) {
           </svg>
         </div>
         
-        <div class="testimony-card-content" style="font-family: ${fontFamily};">
+        <div class="testimony-card-content">
           <h3 class="testimony-card-title">${testimony.title}</h3>
           <p class="testimony-card-text">${testimony.text || testimony.fullText.substring(0, 120) + '...'}</p>
           <p class="testimony-card-author">- ${testimony.author}</p>
@@ -100,9 +109,8 @@ function renderCarouselCard(testimony, index) {
         </div>
         
         <div class="testimony-card-actions">
-          <button class="amen-button ${hasAmened ? 'active' : ''}" 
-                  data-testimony-id="${testimony.id}" 
-                  aria-pressed="${hasAmened}">
+          <button class="amen-button ${hasAmened ? 'amen-active' : ''}" 
+                  data-testimony-id="${testimony.id}">
             <span>🙌</span>
             Amen (<span class="amen-count">${amenCount}</span>)
           </button>
@@ -254,3 +262,4 @@ window.CAROUSEL = {
   playVideoInline,
   addCarouselEventListeners
 };
+

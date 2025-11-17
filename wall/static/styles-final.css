@@ -111,15 +111,15 @@ input, textarea, select {
    ANIMATIONS - FRAMER MOTION → CSS
    ================================================================ */
 
-/* Fade In Up - duration: 0.6s, spring(80, 18) */
+/* Fade In Up - prend en compte l'inclinaison via --card-rotation */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(50px) scale(0.9);
+    transform: translateY(30px) rotate(var(--card-rotation, 0deg));
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0) rotate(var(--card-rotation, 0deg));
   }
 }
 
@@ -242,8 +242,8 @@ input, textarea, select {
 /* Auth Button Container */
 .auth-button-container {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
+  top: 2rem;
+  right: 5rem;
   z-index: 20;
   animation: fadeInUp 0.8s ease-out 0.5s both;
 }
@@ -280,6 +280,92 @@ input, textarea, select {
   font-weight: 600;
 }
 
+/* Conteneur du menu utilisateur */
+.auth-menu {
+  position: relative;
+  display: inline-block;
+}
+
+/* Nom de l'utilisateur : caché par défaut */
+.auth-name {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transform: translateX(4px);
+  transition: max-width 0.25s ease, opacity 0.25s ease;
+}
+
+/* Au survol du bouton, on révèle le nom */
+.auth-btn:hover .auth-name {
+  max-width: 200px; /* ajuste selon la longueur des noms */
+  opacity: 1;
+}
+
+/* Dropdown */
+.auth-dropdown {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  min-width: 230px;
+  border-radius: 0.75rem;
+  background: rgba(15, 15, 15, 0.96);
+  color: #fff;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  z-index: 30;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Dropdown ouvert */
+.auth-menu.open .auth-dropdown {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Contenu du dropdown */
+.auth-dropdown-header {
+  margin-bottom: 0.75rem;
+}
+
+.auth-dropdown-name {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+}
+
+.auth-dropdown-email,
+.auth-dropdown-location {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+/* Bouton de déconnexion */
+.logout-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: #ff4b4b;
+  color: #fff;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.logout-btn:hover {
+  background: #e23a3a;
+  transform: translateY(-1px);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
 /* Hero Content */
 .hero-content {
   position: relative;
@@ -287,7 +373,7 @@ input, textarea, select {
   width: 100%;
   max-width: 1800px;
   margin: 0 auto;
-  padding: 5rem 1.5rem;
+  padding: 5rem 5rem;
 }
 
 .hero-grid {
@@ -384,13 +470,14 @@ input, textarea, select {
 /* Carousel Wrapper */
 .hero-carousel-wrapper {
   display: none;
+  margin: 2rem auto;
 }
 
 .carousel-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
-  height: 700px;
+  height: 640px;
   overflow: hidden;
 }
 
@@ -563,15 +650,19 @@ input, textarea, select {
    ================================================================ */
 .testimony-card {
   position: relative;
-  padding: 1.5rem; /* p-6 = 24px */
-  border-radius: 1rem; /* rounded-2xl = 16px */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: box-shadow 0.3s ease;
-  animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; /* spring(80, 18) */
   min-height: 280px;
   display: flex;
   flex-direction: column;
+  transform-origin: center center;
+  animation:
+    fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    gentleRotate 8s ease-in-out 0.8s infinite;
 }
 
 .testimony-card:hover {
@@ -599,6 +690,42 @@ input, textarea, select {
   gap: 0.75rem; /* space-y-3 = 12px */
 }
 
+.testimony-card-media {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-top: 0.75rem;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.testimony-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.testimony-media-count {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.testimony-card[data-has-media="1"] .testimony-card-content {
+  margin-top: 1.25rem;
+}
+
 .testimony-card-title {
   color: var(--color-black);
   font-size: 1.125rem; /* 18px - h3 default */
@@ -618,22 +745,6 @@ input, textarea, select {
   -webkit-line-clamp: 2; /* line-clamp-2 */
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.testimony-card-photo {
-  margin-top: 0.75rem;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-  aspect-ratio: 4 / 3;
-  position: relative;
-}
-
-.testimony-card-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .testimony-card-author {
@@ -658,6 +769,16 @@ input, textarea, select {
   white-space: nowrap;
   flex: 1;
   margin-right: 0.5rem;
+}
+
+/* Balancement lent des post-it autour de la rotation de base */
+@keyframes gentleRotate {
+  0%, 100% {
+    transform: rotate(var(--card-rotation, 0deg));
+  }
+  50% {
+    transform: rotate(calc(var(--card-rotation, 0deg) * 0.5));
+  }
 }
 
 /* Testimony Card Actions (visible on hover) */
@@ -701,6 +822,10 @@ input, textarea, select {
   cursor: not-allowed;
 }
 
+.amen-button.amen-active {
+  background: #0f9d58;
+}
+
 .share-buttons {
   display: flex;
   gap: 0.25rem; /* gap-1 */
@@ -730,12 +855,16 @@ input, textarea, select {
    ================================================================ */
 .video-card {
   position: relative;
-  padding: 1rem; /* p-4 = 16px */
+  padding: 1rem;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.3s ease;
-  animation: fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center center;
+  animation:
+    fadeInUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    gentleRotate 8s ease-in-out 0.8s infinite;
 }
 
 .video-card:hover {
@@ -748,20 +877,29 @@ input, textarea, select {
   border-radius: 0.5rem;
   overflow: hidden;
   margin-top: 1rem;
-  aspect-ratio: 4 / 3;
+}
+
+.video-thumbnail-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px; /* Fixe le canvas */
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-top: 1rem;
 }
 
 .video-thumbnail {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Remplit proprement */
   display: block;
 }
 
 .video-play-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.45); /* fondu noir plus visible */
+  backdrop-filter: blur(2px);      /* optionnel : effet doux */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1135,6 +1273,10 @@ dialog::backdrop {
 }
 
 /* Testimony Form Modal */
+#videoTestimonySection {
+  margin-bottom: 1.5rem;
+}
+
 .testimony-form-modal {
   width: 600px;
   max-width: 90vw;
@@ -1156,6 +1298,12 @@ dialog::backdrop {
   font-weight: 600;
   color: var(--color-gray-700);
   font-size: 0.875rem;
+}
+
+.form-hint {
+  font-size: 0.85rem;
+  color: var(--color-gray-600);
+  margin-top: -0.25rem;
 }
 
 .form-input {
@@ -1196,20 +1344,6 @@ dialog::backdrop {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.testimony-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-}
-
-.testimony-gallery img {
-  width: 100%;
-  border-radius: 0.75rem;
-  object-fit: cover;
-  max-height: 180px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .testimony-meta {
@@ -1259,6 +1393,22 @@ dialog::backdrop {
   max-height: 400px;
   overflow-y: auto;
 }
+.testimony-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+.testimony-gallery .gallery-item {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.testimony-gallery img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
 
 .testimony-actions {
   display: flex;
@@ -1305,6 +1455,251 @@ dialog::backdrop {
   color: var(--color-gray-600);
   font-size: 0.875rem;
 }
+
+/* ====== Icones centrées, responsive et robustes ====== */
+:root{
+  /* tailles fluides */
+  --icon-btn: clamp(36px, 2.8vw, 44px);            /* ronds Aa / Palette */
+  --icon-size: clamp(16px, 1.8vw, 20px);
+
+  --option-icon: clamp(42px, 3.5vw, 56px);         /* ronds rouges Caméra / Upload */
+  --option-icon-size: clamp(18px, 2vw, 24px);
+}
+
+/* 1) Ronds Aa / Palette */
+.control-btn{
+  width: var(--icon-btn);
+  height: var(--icon-btn);
+  display: inline-flex;                 /* flex plus spécifique que grid ici */
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0;                           /* neutralise tout héritage parasite */
+  line-height: 0;                       /* supprime le décalage baseline */
+  font-size: 0;                         /* évite l'espace inline résiduel */
+  position: relative;
+  box-sizing: border-box;
+}
+/* cible l'icône quelle que soit l'étape d'injection lucide */
+.control-btn > i[data-lucide],
+.control-btn > svg.lucide,
+.control-btn > i[data-lucide] > svg{
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  display: block;
+  margin: 0;                            /* pas d'espace parasite */
+}
+
+/* 2) Ronds rouges "caméra / upload" */
+.video-option-btn .option-icon{
+  width: var(--option-icon);
+  height: var(--option-icon);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  line-height: 0;
+  font-size: 0;
+  padding: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+.video-option-btn .option-icon > i[data-lucide],
+.video-option-btn .option-icon > svg.lucide,
+.video-option-btn .option-icon > i[data-lucide] > svg{
+  width: var(--option-icon-size) !important;
+  height: var(--option-icon-size) !important;
+  display: block;
+  margin: 0;
+}
+
+/* 3) règle générique pour toutes les icônes lucide dans le flux */
+i[data-lucide], svg.lucide{
+  vertical-align: middle;
+}
+
+/* (option) micro-ajustement si tu perçois encore 1px de décalage visuel */
+.control-btn > svg.lucide,
+.video-option-btn .option-icon > svg.lucide{
+  transform: translateY(0.5px);
+}
+
+/* Bouton rond (déjà présent, on renforce juste) */
+.control-btn{
+  width: clamp(36px, 2.8vw, 44px);
+  height: clamp(36px, 2.8vw, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0;
+  line-height: 0;
+  font-size: 0; /* on contrôle la taille via .icon-aa */
+}
+
+/* Le libellé "Aa" qui prévisualise la police */
+.icon-aa{
+  display: block;
+  font-size: clamp(14px, 1.6vw, 18px);
+  line-height: 1;
+  letter-spacing: .2px;
+  color: currentColor;      /* hérite (thème clair/sombre ok) */
+  transform: translateY(1px); /* micro-ajustement optique */
+}
+
+/* Segmented control : rail + pastille */
+.tabs-container{
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #eef0f4;
+  border-radius: 9999px;
+  padding: 4px;
+  gap: 0;
+}
+.tabs-container .tab-indicator{
+  position: absolute; left: 4px; top: 4px; bottom: 4px;
+  width: calc(50% - 8px);
+  background: #fff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 1px 6px rgba(0,0,0,.06);
+  transition: transform .22s cubic-bezier(.2,.7,.2,1);
+  pointer-events: none;
+}
+.tabs-container .tab-btn{
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 12px 10px; border-radius: 9999px;
+  background: transparent; border: 1px solid transparent;
+  font-weight: 700; color: #111827; white-space: nowrap; min-width: 0;
+}
+.tabs-container .tab-btn i{ width: 16px; height: 16px; }
+.tabs-container .tab-btn:not(.active){ color: #374151; }
+.tabs-container:has(.tab-btn[data-type="video"].active) .tab-indicator{
+  transform: translateX(calc(100% + 8px));
+}
+@media (max-width: 420px){
+  .tabs-container{ grid-template-columns: 1fr; }
+  .tabs-container .tab-indicator{ display: none; }
+  .tabs-container .tab-btn.active{ background: #fff; border-color:#e5e7eb; }
+}
+
+/* Timer visuel d'enregistrement */
+.rec-timer{
+  position: absolute; right: 12px; top: 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(17,24,39,.7); color:#fff; border-radius: 9999px;
+  padding: 6px 10px;
+}
+.rec-ring{ width: 24px; height: 24px; }
+.rec-ring .ring-bg{
+  fill: none; stroke: rgba(255,255,255,.25); stroke-width: 4;
+}
+.rec-ring .ring-fg{
+  fill: none; stroke: #ef4444; stroke-width: 4;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: 125.66;  /* 2πr avec r=20 */
+  stroke-dashoffset: 0;      /* sera animé en JS */
+}
+.rec-time{ font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ligne unique avec wrap si manque de place */
+#recordingSection .recording-controls{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;           /* autorise le passage en 2 lignes en mobile */
+  padding: 1rem !important;
+  background: #FEF2F2 !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Vidéo d'enregistrement - hauteur optimisée */
+#recordingSection video,
+#recordingPreview,
+.recording-section video {
+  width: 100% !important;
+  border-radius: 0.5rem !important;
+  background: black !important;
+  max-height: min(50vh, 400px) !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* le bloc "Enregistrement en cours… + timer" */
+#recordingSection .recording-status{
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px;
+  background: #991b1b10;     /* léger rouge pâle */
+  border-radius: 12px;
+  padding: 8px 12px;
+  flex: 0 1 auto !important; /* Ne prend que l'espace nécessaire */
+}
+
+/* pastille rouge */
+#recordingSection .recording-indicator{
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #991b1b;
+}
+#recordingSection .recording-dot{
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.25);
+  animation: blink 1s infinite;
+}
+@keyframes blink { 50%{ opacity:.45; transform: scale(.9);} }
+
+/* timer compact collé au statut */
+#recordingSection .rec-timer-inline{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #991b1b;
+  border: 1px solid #991b1b55;
+  border-radius: 9999px;
+  padding: 3px 8px;
+  font-weight: 700;
+}
+#recordingSection .rec-ring{ width: 18px; height: 18px; }
+#recordingSection .rec-ring .ring-bg{
+  fill: none; stroke: rgba(153,27,27,.25); stroke-width: 3;
+}
+#recordingSection .rec-ring .ring-fg{
+  fill: none; stroke: #991b1b; stroke-width: 3; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 50% 50%;
+  stroke-dasharray: 125.66; stroke-dashoffset: 0;
+}
+
+/* bouton stop reste à droite, même ligne ; passe en pleine largeur si wrap */
+#recordingSection .stop-btn{
+  background:#ef4444; color:#fff; border:none; border-radius:10px;
+  padding:10px 16px; font-weight:700;
+}
+#recordingSection .stop-btn:hover{ background:#dc2626; }
+
+/* Mobile: passe sur 2 lignes, avec le STOP en pleine largeur */
+@media (max-width: 560px){
+  #recordingSection .recording-controls{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #recordingSection .stop-btn{
+    width: 100%;
+    align-self: stretch;
+  }
+  #recordingSection .recording-status{
+    justify-content: center;
+  }
+}
+
 
 /* ================================================================
    RESPONSIVE DESIGN - BREAKPOINTS

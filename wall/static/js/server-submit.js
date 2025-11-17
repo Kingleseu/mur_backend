@@ -4,6 +4,16 @@
   const API_ENDPOINT = '/api/testimonies/';
   const DEFAULT_VIDEO_THUMB = (window.CONFIG && window.CONFIG.DEFAULT_VIDEO_THUMBNAIL) ||
     'https://images.unsplash.com/photo-1547357245-bd63d4b7c483?auto=format&fit=crop&w=800&q=60';
+  const FONT_NORMALIZE_MAP = [
+    { needle: 'permanent marker', label: 'Permanent Marker' },
+    { needle: 'patrick hand', label: 'Patrick Hand' },
+    { needle: 'indie flower', label: 'Indie Flower' },
+    { needle: 'merriweather', label: 'Merriweather' },
+    { needle: 'caveat', label: 'Caveat' },
+    { needle: 'kalam', label: 'Kalam' },
+    { needle: 'shadows into light', label: 'Shadows Into Light' },
+    { needle: 'inter', label: 'Inter' }
+  ];
 
   function getCSRF(){
     const name = 'csrftoken=';
@@ -31,6 +41,75 @@
     return '#FFF6D9';
   }
 
+  function normalizeFontLabel(fontFamily, fallbackName){
+    const css = (fontFamily || '').toLowerCase();
+    const direct = (fallbackName || '').trim();
+    if (direct) return direct;
+    for (const entry of FONT_NORMALIZE_MAP){
+      if (css.includes(entry.needle)){
+        return entry.label;
+      }
+    }
+    return 'Inter';
+  }
+
+  function formatDateLabel(isoString){
+    const date = isoString ? new Date(isoString) : new Date();
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
+  }
+
+  function mapApiPayloadToFrontend(apiPayload, extras = {}){
+    if (!apiPayload) return null;
+    const fullText = (apiPayload.text || '').trim();
+    const preview = fullText.length > 240 ? `${fullText.slice(0, 240)}…` : fullText;
+    const imageUrls = Array.isArray(apiPayload.images)
+      ? apiPayload.images.map(img => img && img.url).filter(Boolean)
+      : [];
+
+    const testimony = {
+      id: apiPayload.id,
+      title: apiPayload.title || '',
+      text: preview,
+      fullText,
+      color: apiPayload.postit_color || getSelectedColorHex(),
+      font: normalizeFontLabel(apiPayload.font_family, extras.fontName),
+      author: extras.author || (apiPayload.author || `${apiPayload.first_name || ''} ${apiPayload.last_name || ''}`).trim() || 'Anonyme',
+      location: extras.location || '',
+      date: formatDateLabel(apiPayload.created_at),
+      category: apiPayload.category || '',
+      amen_count: apiPayload.amen_count || 0
+    };
+
+    if (imageUrls.length){
+      testimony.images = imageUrls;
+      testimony.thumbnail = testimony.thumbnail || imageUrls[0];
+    } else if (apiPayload.thumbnail){
+      testimony.thumbnail = apiPayload.thumbnail;
+    }
+
+    const kind = (apiPayload.kind || extras.kind || 'text').toLowerCase();
+    if (kind === 'video'){
+      testimony.type = 'video';
+      testimony.videoUrl = apiPayload.video_url || apiPayload.video || '';
+      testimony.thumbnail = testimony.thumbnail || DEFAULT_VIDEO_THUMB;
+    }
+
+    return testimony;
+  }
+
+  function prependTestimony(testimony){
+    if (!testimony) return null;
+    if (!window.CONFIG.TESTIMONIES || !Array.isArray(window.CONFIG.TESTIMONIES)){
+      window.CONFIG.TESTIMONIES = [];
+    }
+    window.CONFIG.TESTIMONIES.unshift(testimony);
+    if (window.STATE && window.STATE.amenCounts){
+      window.STATE.amenCounts[testimony.id] = testimony.amen_count || 0;
+    }
+    return testimony;
+  }
+
   function ensureFileObject(fileOrBlob){
     if (!fileOrBlob) return null;
     if (fileOrBlob instanceof File) return fileOrBlob;
@@ -43,6 +122,24 @@
       fileOrBlob.type = type;
       return fileOrBlob;
     }
+  }
+
+  function resolveCategoryValue() {
+    const select = document.getElementById('formCategory');
+    if (!select) return '';
+    let value = (select.value || '').trim();
+    if (!value) {
+      throw new Error('Veuillez sélectionner une catégorie.');
+    }
+    if (value.toLowerCase() === 'autre') {
+      const customInput = document.getElementById('formCategoryCustom');
+      const custom = (customInput ? customInput.value : '').trim();
+      if (!custom) {
+        throw new Error('Veuillez préciser la catégorie lorsque vous choisissez "Autre".');
+      }
+      return custom;
+    }
+    return value;
   }
 
   async function postFormData(fd){
@@ -130,7 +227,6 @@
     async function handleTextSubmit(){
       const titleEl = document.getElementById('formTitle');
       const textEl = document.getElementById('formTestimony') || document.getElementById('formText');
-      const categorySelect = document.getElementById('formCategory');
 
       const title = titleEl ? titleEl.value.trim() : '';
       const testimonyText = textEl ? textEl.value.trim() : '';
@@ -138,7 +234,7 @@
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
 
-      const category = categorySelect && categorySelect.value ? categorySelect.value : '';
+      const category = resolveCategoryValue();
       const colorHex = getSelectedColorHex();
       const fontName = window.STATE && window.STATE.selectedFont && window.STATE.selectedFont.name ? window.STATE.selectedFont.name : 'Inter';
       const fontCSS = window.STATE && window.STATE.selectedFont && window.STATE.selectedFont.value ? window.STATE.selectedFont.value : 'Inter, sans-serif';
@@ -161,7 +257,14 @@
         if (file) fd.append('images', file);
       });
 
-      await postFormData(fd);
+      const created = await postFormData(fd);
+      const mapped = mapApiPayloadToFrontend(created, {
+        fontName,
+        author: window.STATE.userName || `${first} ${last}`.trim(),
+        location: window.STATE.userLocation || '',
+        kind: 'text'
+      });
+      prependTestimony(mapped);
 
       if (window.showToast){
         window.showToast('TǸmoignage envoyǸ. En attente de validation.', { kind: 'success' });
@@ -170,7 +273,6 @@
 
     async function handleVideoSubmit(){
       const titleEl = document.getElementById('formTitle');
-      const categorySelect = document.getElementById('formCategory');
       const title = titleEl ? titleEl.value.trim() : '';
       if (!title){
         throw new Error('Veuillez renseigner un titre pour votre tǸmoignage vidǸo.');
@@ -185,7 +287,7 @@
         throw new Error('Impossible de prǸparer la vidǸo. RǸessayez.');
       }
 
-      const category = categorySelect && categorySelect.value ? categorySelect.value : '';
+      const category = resolveCategoryValue();
       const colorHex = getSelectedColorHex();
       const fontName = window.STATE && window.STATE.selectedFont && window.STATE.selectedFont.name ? window.STATE.selectedFont.name : 'Inter';
       const fontCSS = window.STATE && window.STATE.selectedFont && window.STATE.selectedFont.value ? window.STATE.selectedFont.value : 'Inter, sans-serif';
@@ -204,13 +306,21 @@
       if (category) fd.append('category', category);
       fd.append('video_file', videoFile);
 
-      await postFormData(fd);
+      const created = await postFormData(fd);
+      const mapped = mapApiPayloadToFrontend(created, {
+        fontName,
+        author: window.STATE.userName || `${first} ${last}`.trim(),
+        location: window.STATE.userLocation || '',
+        kind: 'video'
+      });
+      prependTestimony(mapped);
 
       if (window.showToast){
         window.showToast('TǸmoignage vidǸo envoyǸ. En attente de validation.', { kind: 'success' });
       }
     }
 
+    window.handleFormSubmit = serverHandler;
     window.FORM.handleFormSubmit = serverHandler;
 
     if (formEl){

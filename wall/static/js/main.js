@@ -5,29 +5,106 @@
 function renderAuthButton() {
   const container = document.getElementById('authContainer');
   if (!container) return;
-  
+
   if (window.STATE.userName) {
     const initial = window.STATE.userName.charAt(0).toUpperCase();
+    const email =
+      window.STATE.userEmail ||
+      localStorage.getItem('bunda21_email') ||
+      'Email non renseigné';
+
     container.innerHTML = `
-      <button class="auth-btn" id="userMenuBtn">
-        <div class="user-avatar">
-          <span>${initial}</span>
+      <div class="auth-menu">
+        <button class="auth-btn" id="userMenuBtn" aria-haspopup="true" aria-expanded="false">
+          <div class="user-avatar">
+            <span>${initial}</span>
+          </div>
+          <span class="auth-name">${window.STATE.userName}</span>
+        </button>
+
+        <div class="auth-dropdown" id="userDropdown">
+          <div class="auth-dropdown-header">
+            <div class="auth-dropdown-name">${window.STATE.userName}</div>
+            <div class="auth-dropdown-email">${email}</div>
+            <div class="auth-dropdown-location" id="authLocation">
+              Localisation en cours...
+            </div>
+          </div>
+          <button class="logout-btn" id="logoutBtn">Se déconnecter</button>
         </div>
-        <span>${window.STATE.userName}</span>
-      </button>
+      </div>
     `;
-    
-    const userMenuBtn = document.getElementById('userMenuBtn');
-    if (userMenuBtn) {
-      userMenuBtn.addEventListener('click', () => {
-        if (confirm('Se déconnecter ?')) {
-          window.STATE.userName = null;
-          localStorage.removeItem('bunda21_user');
-          renderAuthButton();
+
+    const menu = container.querySelector('.auth-menu');
+    const btn = container.querySelector('#userMenuBtn');
+    const logoutBtn = container.querySelector('#logoutBtn');
+
+    // Ouvrir / fermer le dropdown au clic
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    // Fermer au clic à l'extérieur
+    document.addEventListener('click', (e) => {
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Déconnexion
+    logoutBtn.addEventListener('click', () => {
+      window.STATE.userName = null;
+      window.STATE.userEmail = null;
+      localStorage.removeItem('bunda21_user');
+      localStorage.removeItem('bunda21_email');
+      renderAuthButton();
+    });
+
+    // Localisation auto (simple)
+    const locEl = document.getElementById('authLocation');
+    if (navigator.geolocation && locEl) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          // Reverse geocoding avec OpenStreetMap
+          fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`)
+          .then(res => res.json())
+          .then(data => {
+            const city = data.city || data.locality || data.principalSubdivision || "Ville inconnue";
+            let country = data.countryName || "";
+
+            // Format spécial Congo
+            if (country.toLowerCase().includes("république","démocratique","congo")) {
+              country = "RDC";
+            }
+
+            const label = `${city}, ${country}`;
+
+            // Affichage dans le menu
+            locEl.textContent = label;
+
+            // 🔐 Stockage dans le state + localStorage
+            window.STATE.userLocation = label;
+            localStorage.setItem('bunda21_user_location', label);
+          })
+
+          .catch(() => {
+            locEl.textContent = "Localisation indisponible";
+          });
+        },
+        () => {
+          locEl.textContent = 'Localisation indisponible';
         }
-      });
+      );
+    } else if (locEl) {
+      locEl.textContent = 'Localisation indisponible';
     }
+
   } else {
+    // "Sign In"
     container.innerHTML = `
       <button class="auth-btn" id="signInBtn">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -38,7 +115,7 @@ function renderAuthButton() {
         Sign In
       </button>
     `;
-    
+
     const signInBtn = document.getElementById('signInBtn');
     if (signInBtn) {
       signInBtn.addEventListener('click', () => {
@@ -47,6 +124,7 @@ function renderAuthButton() {
     }
   }
 }
+
 
 function initializeHeroCounter() {
   const counterElement = document.getElementById('testimoniesCount');
@@ -65,34 +143,27 @@ function initializeScrollIndicator() {
 }
 
 function initializeCTAButtons() {
-  // Hero CTA
+  const triggerForm = (event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    if (window.MODALS && typeof window.MODALS.openTestimonyForm === 'function') {
+      window.MODALS.openTestimonyForm();
+    }
+  };
+
   const heroCTA = document.getElementById('heroCTA');
   if (heroCTA) {
-    heroCTA.addEventListener('click', () => {
-      if (window.MODALS && typeof window.MODALS.openTestimonyForm === 'function') {
-        window.MODALS.openTestimonyForm();
-      } else if (window.openTestimonyForm) {
-        window.openTestimonyForm();
-      } else {
-        window.UTILS.scrollToWall();
-      }
-    });
+    heroCTA.addEventListener('click', triggerForm);
   }
   
-  // Add testimony button dans le header du wall
   const addTestimonyBtn = document.getElementById('addTestimonyBtn');
   if (addTestimonyBtn) {
-    addTestimonyBtn.addEventListener('click', () => {
-      window.MODALS.openTestimonyForm();
-    });
+    addTestimonyBtn.addEventListener('click', triggerForm);
   }
   
-  // Footer CTA
   const footerCTA = document.getElementById('footerCTA');
   if (footerCTA) {
-    footerCTA.addEventListener('click', () => {
-      window.MODALS.openTestimonyForm();
-    });
+    footerCTA.addEventListener('click', triggerForm);
   }
 }
 
@@ -104,17 +175,15 @@ function init() {
   renderAuthButton();
   initializeHeroCounter();
   window.CAROUSEL.renderCarouselColumns();
-  if (window.TESTIMONIES_GRID) {
-    if (window.TESTIMONIES_GRID.renderCategoryFilters) window.TESTIMONIES_GRID.renderCategoryFilters();
-    if (window.TESTIMONIES_GRID.renderTestimoniesGrid) window.TESTIMONIES_GRID.renderTestimoniesGrid();
-    if (window.TESTIMONIES_GRID.renderPagination) window.TESTIMONIES_GRID.renderPagination();
-  }
+  window.TESTIMONIES_GRID.renderCategoryFilters();
+  window.TESTIMONIES_GRID.renderTestimoniesGrid();
+  window.TESTIMONIES_GRID.renderPagination();
   
   // Initialize modals
-  if (window.MODALS && window.MODALS.initializeModals) window.MODALS.initializeModals();
+  window.MODALS.initializeModals();
   
   // Initialize form
-  if (window.FORM && window.FORM.initializeTestimonyForm) window.FORM.initializeTestimonyForm();
+  window.FORM.initializeTestimonyForm();
   
   // Initialize UI elements
   initializeScrollIndicator();

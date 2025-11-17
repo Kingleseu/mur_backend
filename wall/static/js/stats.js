@@ -12,13 +12,17 @@ function calculateTotalAmens() {
   }
   
   return window.CONFIG.TESTIMONIES.reduce((sum, testimony) => {
-    if (!testimony || typeof testimony.id === 'undefined') {
-      return sum;
+    let count = 0;
+
+    if (window.UTILS && typeof window.UTILS.getAmensForTestimony === 'function') {
+      count = window.UTILS.getAmensForTestimony(testimony.id);
+    } else if (window.STATE && window.STATE.amenCounts && typeof window.STATE.amenCounts[testimony.id] === 'number') {
+      count = window.STATE.amenCounts[testimony.id];
+    } else if (typeof testimony.amen_count === 'number') {
+      count = testimony.amen_count;
     }
-    if (window.STATE && Object.prototype.hasOwnProperty.call(window.STATE.amenCounts, testimony.id)) {
-      return sum + (window.STATE.amenCounts[testimony.id] || 0);
-    }
-    return sum + (testimony.amen_count || 0);
+
+    return sum + count;
   }, 0);
 }
 
