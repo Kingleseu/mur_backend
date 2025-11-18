@@ -108,11 +108,11 @@ else:  # local
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('MYSQLDATABASE', 'mur_temoin'),
-            'USER': os.getenv('MYSQLUSER', 'root'),
-            'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
-            'HOST': os.getenv('MYSQLHOST', '127.0.0.1'),
-            'PORT': os.getenv('MYSQLPORT', '3306'),
+            'NAME': os.getenv('DATABASE', 'mur_temoin'),
+            'USER': os.getenv('USER', 'root'),
+            'PASSWORD': os.getenv('PASSWORD', ''),
+            'HOST': os.getenv('HOST', '127.0.0.1'),
+            'PORT': os.getenv('PORT', '3306'),
             'OPTIONS': {
                 'ssl': {'ssl_disabled': True},
                 'charset': 'utf8mb4',
