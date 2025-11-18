@@ -90,7 +90,6 @@ WSGI_APPLICATION = 'mur_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        # Railway fournit ces variables automatiquement si tu lies le service MySQL
         'NAME': os.getenv('MYSQLDATABASE', 'mur_temoin'),
         'USER': os.getenv('MYSQLUSER', 'root'),
         'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
@@ -98,10 +97,10 @@ DATABASES = {
         'PORT': os.getenv('MYSQLPORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
-            'ssl_mode': 'DISABLED',
         },
     }
 }
+
 
 
 
