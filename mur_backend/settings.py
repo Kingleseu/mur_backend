@@ -88,24 +88,39 @@ WSGI_APPLICATION = 'mur_backend.wsgi.application'
 # settings.
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQLDATABASE', ''),
-        'USER': os.getenv('MYSQLUSER', ''),
-        'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
-        'HOST': os.getenv('MYSQLHOST', ''),
-        'PORT': os.getenv('MYSQLPORT', ''),
-        'OPTIONS': {
-            # ⚠️ ESSENTIEL pour ton problème TLS/SSL
-            'ssl': {'ssl_disabled': True},# on force la connexion SANS SSL
-
-            # Bonus, propre mais pas obligatoire
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        },
+if os.getenv("DJANGO_ENV") == "production":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQLDATABASE', ''),
+            'USER': os.getenv('MYSQLUSER', ''),
+            'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
+            'HOST': os.getenv('MYSQLHOST', ''),
+            'PORT': os.getenv('MYSQLPORT', ''),
+            'OPTIONS': {
+                'ssl': {'ssl_disabled': True},
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
     }
-}
+else:  # local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('MYSQLDATABASE', 'mur_temoin'),
+            'USER': os.getenv('MYSQLUSER', 'root'),
+            'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
+            'HOST': os.getenv('MYSQLHOST', '127.0.0.1'),
+            'PORT': os.getenv('MYSQLPORT', '3306'),
+            'OPTIONS': {
+                'ssl': {'ssl_disabled': True},
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            },
+        }
+    }
+
 
 
 
