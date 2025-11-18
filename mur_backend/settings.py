@@ -18,7 +18,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
 DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']  
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com','.railway.app']  
 
 
 # -------------------------------------------------------------------
@@ -96,7 +96,12 @@ DATABASES = {
         'HOST': os.getenv('MYSQLHOST', '127.0.0.1'),
         'PORT': os.getenv('MYSQLPORT', '3306'),
         'OPTIONS': {
+            # ⚠️ ESSENTIEL pour ton problème TLS/SSL
+            'ssl_disabled': True,     # on force la connexion SANS SSL
+
+            # Bonus, propre mais pas obligatoire
             'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
     }
 }
