@@ -15,13 +15,18 @@ function getAmensForTestimony(id) {
 function getFilteredTestimonies() {
   const { TESTIMONIES } = window.CONFIG;
   const { selectedCategory } = window.STATE;
-  
+
+  // Ne garder que les témoignages approuvés (ou sans statut explicite)
+  const approved = TESTIMONIES.filter(
+    (t) => !t.status || t.status === 'approved'
+  );
+
   if (selectedCategory === 'Tous') {
-    return TESTIMONIES;
+    return approved;
   } else if (selectedCategory === 'Vidéos') {
-    return TESTIMONIES.filter(t => t.type === 'video');
+    return approved.filter(t => t.type === 'video');
   } else {
-    return TESTIMONIES.filter(t => t.category === selectedCategory);
+    return approved.filter(t => t.category === selectedCategory);
   }
 }
 

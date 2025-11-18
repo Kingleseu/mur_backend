@@ -2,6 +2,40 @@
 // FORMULAIRE D'AJOUT DE TÉMOIGNAGE COMPLET
 // ================================================
 
+function normalizeText(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function inferCategoryFromTitle(rawTitle) {
+  const keywords = window.CONFIG.CATEGORY_KEYWORDS || {};
+  const text = normalizeText(rawTitle || '');
+  if (!text) return 'Autre';
+
+  const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
+  let best = { cat: 'Autre', score: 0 };
+
+  Object.entries(keywords).forEach(([category, list]) => {
+    let score = 0;
+    list.forEach((kw) => {
+      const normKw = normalizeText(kw);
+      if (normKw.includes(' ')) {
+        if (text.includes(normKw)) score += 4;
+        return;
+      }
+      tokens.forEach((tok) => {
+        if (tok === normKw) score += 4;
+        else if (tok.startsWith(normKw)) score += 3;
+        else if (tok.includes(normKw)) score += 1;
+      });
+    });
+    if (score > best.score) best = { cat: category, score };
+  });
+  return best.score > 0 ? best.cat : 'Autre';
+}
+
 function getSelectedCategoryValue(strict = true) {
   const select = document.getElementById('formCategory');
   if (!select) return '';
@@ -119,6 +153,36 @@ function initializeTestimonyForm() {
   if (categorySelect){
     categorySelect.addEventListener('change', syncCustomCategoryField);
     syncCustomCategoryField();
+  }
+
+  // Auto-catégorisation basée sur le titre
+  const titleInput = document.getElementById('formTitle');
+  const applyAutoCategory = () => {
+    if (!titleInput) return;
+    const inferred = inferCategoryFromTitle(titleInput.value);
+    const select = document.getElementById('formCategory');
+    const customGroup = document.getElementById('customCategoryGroup');
+    const customInput = document.getElementById('formCategoryCustom');
+    if (!select || !inferred) return;
+    const normInf = normalizeText(inferred);
+    const match = Array.from(select.options).find(
+      (opt) => normalizeText(opt.value) === normInf
+    );
+    if (match && normInf !== 'autre') {
+      select.value = match.value;
+      if (customGroup) customGroup.classList.add('hidden');
+      if (customInput) customInput.value = '';
+    } else if (normInf === 'autre') {
+      const otherOpt = Array.from(select.options).find(
+        (opt) => normalizeText(opt.value) === 'autre'
+      );
+      if (otherOpt) select.value = otherOpt.value;
+      if (customGroup) customGroup.classList.remove('hidden');
+    }
+    syncCustomCategoryField();
+  };
+  if (titleInput) {
+    titleInput.addEventListener('input', applyAutoCategory);
   }
   
   // Fermer popovers en cliquant ailleurs

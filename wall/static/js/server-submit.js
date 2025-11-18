@@ -257,14 +257,7 @@
         if (file) fd.append('images', file);
       });
 
-      const created = await postFormData(fd);
-      const mapped = mapApiPayloadToFrontend(created, {
-        fontName,
-        author: window.STATE.userName || `${first} ${last}`.trim(),
-        location: window.STATE.userLocation || '',
-        kind: 'text'
-      });
-      prependTestimony(mapped);
+      await postFormData(fd); // reste en file d'attente (pending)
 
       if (window.showToast){
         window.showToast('TǸmoignage envoyǸ. En attente de validation.', { kind: 'success' });
@@ -306,14 +299,7 @@
       if (category) fd.append('category', category);
       fd.append('video_file', videoFile);
 
-      const created = await postFormData(fd);
-      const mapped = mapApiPayloadToFrontend(created, {
-        fontName,
-        author: window.STATE.userName || `${first} ${last}`.trim(),
-        location: window.STATE.userLocation || '',
-        kind: 'video'
-      });
-      prependTestimony(mapped);
+      await postFormData(fd); // reste en file d'attente (pending)
 
       if (window.showToast){
         window.showToast('TǸmoignage vidǸo envoyǸ. En attente de validation.', { kind: 'success' });

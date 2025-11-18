@@ -1,0 +1,591 @@
+[
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$6ouHk3HasO8rm6lcyjHHfo$/e7DfEwKFPGXz8D6SlAf9ZmgUviRgOk/UZkViyPEjX8=",
+    "last_login": "2025-11-17T10:59:58.889Z",
+    "is_superuser": true,
+    "username": "Bunda21",
+    "first_name": "",
+    "last_name": "",
+    "email": "ebenndombi99@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-11-12T00:40:57.486Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "wall.testimony",
+  "pk": 38,
+  "fields": {
+    "kind": "text",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "title": "j'étais malde",
+    "text": "fffgfcffhhhgfgh",
+    "video": null,
+    "video_file": "",
+    "postit_color": "#FFF6D9",
+    "font_family": "Inter, sans-serif",
+    "category": "Provision",
+    "email": "ebenndombi04@gmail.com",
+    "phone": "",
+    "verification_type": "email",
+    "status": "approved",
+    "created_at": "2025-11-17T11:28:33.793Z"
+  }
+},
+{
+  "model": "wall.testimony",
+  "pk": 39,
+  "fields": {
+    "kind": "text",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "title": "j'étais malde",
+    "text": "gfffffjjjhfhfhg hjghghfghfhfgh hvhjhjhj",
+    "video": null,
+    "video_file": "",
+    "postit_color": "#E0F7FA",
+    "font_family": "Inter, sans-serif",
+    "category": "Provision",
+    "email": "ebenndombi04@gmail.com",
+    "phone": "",
+    "verification_type": "email",
+    "status": "approved",
+    "created_at": "2025-11-17T11:39:24.009Z"
+  }
+},
+{
+  "model": "wall.testimony",
+  "pk": 40,
+  "fields": {
+    "kind": "text",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "title": "Il ma deliver de mes pêcher",
+    "text": "fhgfhgfhgfhghg\"ryuh554cvccv",
+    "video": null,
+    "video_file": "",
+    "postit_color": "#FFF6D9",
+    "font_family": "Patrick Hand, cursive",
+    "category": "Éducation",
+    "email": "ebenndombi04@gmail.com",
+    "phone": "",
+    "verification_type": "email",
+    "status": "approved",
+    "created_at": "2025-11-17T11:49:31.277Z"
+  }
+},
+{
+  "model": "wall.testimony",
+  "pk": 41,
+  "fields": {
+    "kind": "video",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "title": "Il ma deliver de mes pêcher",
+    "text": "",
+    "video": null,
+    "video_file": "testimonies/videos/b21_3.mp4",
+    "postit_color": "#FFF6D9",
+    "font_family": "Inter, sans-serif",
+    "category": "Éducation",
+    "email": "ebenndombi04@gmail.com",
+    "phone": "",
+    "verification_type": "email",
+    "status": "pending",
+    "created_at": "2025-11-17T12:17:08.069Z"
+  }
+},
+{
+  "model": "wall.testimony",
+  "pk": 42,
+  "fields": {
+    "kind": "text",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "title": "Je suis benie",
+    "text": "Dieu est bon\r\nDieu est bon\r\nDieu est bon\r\nDieu est bon",
+    "video": null,
+    "video_file": "",
+    "postit_color": "#E4FFEB",
+    "font_family": "Indie Flower, cursive",
+    "category": "Provision",
+    "email": "ebenndombi04@gmail.com",
+    "phone": "",
+    "verification_type": "email",
+    "status": "pending",
+    "created_at": "2025-11-17T20:06:55.624Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 32,
+  "fields": {
+    "testimony": 38,
+    "image": "testimonies/IMG-20251008-WA0036.jpg",
+    "created_at": "2025-11-17T11:28:33.808Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 33,
+  "fields": {
+    "testimony": 38,
+    "image": "testimonies/IMG-20251008-WA0037.jpg",
+    "created_at": "2025-11-17T11:28:33.823Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 34,
+  "fields": {
+    "testimony": 39,
+    "image": "testimonies/_DSC3053.jpg",
+    "created_at": "2025-11-17T11:39:24.057Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 35,
+  "fields": {
+    "testimony": 39,
+    "image": "testimonies/_DSC3065.jpg",
+    "created_at": "2025-11-17T11:39:24.096Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 36,
+  "fields": {
+    "testimony": 40,
+    "image": "testimonies/_DSC2951.jpg",
+    "created_at": "2025-11-17T11:49:31.384Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 37,
+  "fields": {
+    "testimony": 40,
+    "image": "testimonies/_DSC3027.jpg",
+    "created_at": "2025-11-17T11:49:31.426Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 38,
+  "fields": {
+    "testimony": 40,
+    "image": "testimonies/_DSC3046.jpg",
+    "created_at": "2025-11-17T11:49:31.464Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 39,
+  "fields": {
+    "testimony": 40,
+    "image": "testimonies/_DSC3053.jpg",
+    "created_at": "2025-11-17T11:49:31.503Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 40,
+  "fields": {
+    "testimony": 42,
+    "image": "testimonies/_DSC3530.jpg",
+    "created_at": "2025-11-17T20:06:55.663Z"
+  }
+},
+{
+  "model": "wall.testimonyimage",
+  "pk": 41,
+  "fields": {
+    "testimony": 42,
+    "image": "testimonies/_DSC3583.jpg",
+    "created_at": "2025-11-17T20:06:55.697Z"
+  }
+},
+{
+  "model": "wall.testimonyamen",
+  "pk": 32,
+  "fields": {
+    "testimony": 42,
+    "session_key": "819laij7j3ydgah46bafl63xuic1vzvy",
+    "user_email": "ebenndombi04@gmail.com",
+    "created_at": "2025-11-17T20:07:36.182Z"
+  }
+},
+{
+  "model": "wall.memberprofile",
+  "pk": 1,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "created_at": "2025-11-13T23:38:39.204Z",
+    "updated_at": "2025-11-13T23:38:39.204Z"
+  }
+},
+{
+  "model": "wall.memberprofile",
+  "pk": 2,
+  "fields": {
+    "email": "ebenndombiqr@gmail.com",
+    "first_name": "Nathan",
+    "last_name": "MBAKI",
+    "created_at": "2025-11-13T23:41:28.256Z",
+    "updated_at": "2025-11-13T23:41:28.256Z"
+  }
+},
+{
+  "model": "wall.memberprofile",
+  "pk": 3,
+  "fields": {
+    "email": "ebenndombi04@gmail.com",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "created_at": "2025-11-14T10:25:29.809Z",
+    "updated_at": "2025-11-14T10:25:29.809Z"
+  }
+},
+{
+  "model": "wall.memberprofile",
+  "pk": 4,
+  "fields": {
+    "email": "kal.fxavier@gmail.com",
+    "first_name": "xav",
+    "last_name": "Kal",
+    "created_at": "2025-11-14T16:25:59.495Z",
+    "updated_at": "2025-11-14T16:25:59.495Z"
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 5,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "643938",
+    "created_at": "2025-11-12T00:32:04.526Z",
+    "expires_at": "2025-11-12T00:42:04.524Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 6,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "jedidia",
+    "last_name": "yemba",
+    "code": "460603",
+    "created_at": "2025-11-12T15:10:10.378Z",
+    "expires_at": "2025-11-12T15:20:10.376Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 7,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "530377",
+    "created_at": "2025-11-12T15:42:32.338Z",
+    "expires_at": "2025-11-12T15:52:32.336Z",
+    "used": false,
+    "attempts": 0
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 8,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "108005",
+    "created_at": "2025-11-12T15:42:35.001Z",
+    "expires_at": "2025-11-12T15:52:34.997Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 9,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "joel",
+    "last_name": "Stone",
+    "code": "456873",
+    "created_at": "2025-11-12T22:33:30.350Z",
+    "expires_at": "2025-11-12T22:43:30.348Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 10,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "861398",
+    "created_at": "2025-11-12T22:59:10.487Z",
+    "expires_at": "2025-11-12T23:09:10.484Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 11,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "706664",
+    "created_at": "2025-11-12T23:58:13.055Z",
+    "expires_at": "2025-11-13T00:08:13.052Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 12,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "code": "326285",
+    "created_at": "2025-11-13T23:21:48.299Z",
+    "expires_at": "2025-11-13T23:31:48.297Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 13,
+  "fields": {
+    "email": "ebenndombiqr@gmail.com",
+    "first_name": "",
+    "last_name": "",
+    "code": "617027",
+    "created_at": "2025-11-13T23:23:09.162Z",
+    "expires_at": "2025-11-13T23:33:09.161Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 14,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "655486",
+    "created_at": "2025-11-13T23:38:06.095Z",
+    "expires_at": "2025-11-13T23:48:06.095Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 15,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "620864",
+    "created_at": "2025-11-13T23:38:57.347Z",
+    "expires_at": "2025-11-13T23:48:57.347Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 16,
+  "fields": {
+    "email": "ebenndombiqr@gmail.com",
+    "first_name": "Nathan",
+    "last_name": "MBAKI",
+    "code": "064543",
+    "created_at": "2025-11-13T23:40:43.861Z",
+    "expires_at": "2025-11-13T23:50:43.860Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 17,
+  "fields": {
+    "email": "ebenndombiqr@gmail.com",
+    "first_name": "Nathan",
+    "last_name": "MBAKI",
+    "code": "060938",
+    "created_at": "2025-11-13T23:53:49.277Z",
+    "expires_at": "2025-11-14T00:03:49.277Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 18,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "185954",
+    "created_at": "2025-11-13T23:55:06.134Z",
+    "expires_at": "2025-11-14T00:05:06.134Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 19,
+  "fields": {
+    "email": "ebenndombiqr@gmail.com",
+    "first_name": "Nathan",
+    "last_name": "MBAKI",
+    "code": "147704",
+    "created_at": "2025-11-14T00:04:22.121Z",
+    "expires_at": "2025-11-14T00:14:22.121Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 20,
+  "fields": {
+    "email": "ebenndombi04@gmail.com",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "code": "535378",
+    "created_at": "2025-11-14T10:25:04.604Z",
+    "expires_at": "2025-11-14T10:35:04.604Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 21,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "172439",
+    "created_at": "2025-11-14T15:02:08.358Z",
+    "expires_at": "2025-11-14T15:12:08.358Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 22,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "087341",
+    "created_at": "2025-11-14T16:20:09.708Z",
+    "expires_at": "2025-11-14T16:30:09.707Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 23,
+  "fields": {
+    "email": "kal.fxavier@gmail.com",
+    "first_name": "xav",
+    "last_name": "Kal",
+    "code": "710950",
+    "created_at": "2025-11-14T16:25:04.845Z",
+    "expires_at": "2025-11-14T16:35:04.844Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 24,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "190651",
+    "created_at": "2025-11-14T23:43:32.072Z",
+    "expires_at": "2025-11-14T23:53:32.071Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 25,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "137151",
+    "created_at": "2025-11-16T00:43:10.508Z",
+    "expires_at": "2025-11-16T00:53:10.507Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 26,
+  "fields": {
+    "email": "ebenndombi99@gmail.com",
+    "first_name": "Eben",
+    "last_name": "Ndombi",
+    "code": "597403",
+    "created_at": "2025-11-16T18:13:29.474Z",
+    "expires_at": "2025-11-16T18:23:29.474Z",
+    "used": true,
+    "attempts": 1
+  }
+},
+{
+  "model": "wall.verificationcode",
+  "pk": 27,
+  "fields": {
+    "email": "ebenndombi04@gmail.com",
+    "first_name": "Sam",
+    "last_name": "Kabongo",
+    "code": "137914",
+    "created_at": "2025-11-17T10:57:40.030Z",
+    "expires_at": "2025-11-17T11:07:40.030Z",
+    "used": true,
+    "attempts": 1
+  }
+}
+]

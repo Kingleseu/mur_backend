@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
 
+
 class Testimony(models.Model):
     KIND_CHOICES = (('text', 'text'), ('video', 'video'), ('mix', 'mix'))
     STATUS_CHOICES = (('pending', 'pending'), ('approved', 'approved'), ('rejected', 'rejected'))
@@ -41,7 +42,7 @@ class Testimony(models.Model):
         return f"[{self.kind}] {self.author_fullname()} ({self.status})"
 
 
-class TestimonyImage(models.Model):  # <— NOUVEAU
+class TestimonyImage(models.Model):
     testimony = models.ForeignKey(
         Testimony, on_delete=models.CASCADE, related_name='images'
     )
@@ -83,7 +84,8 @@ class TestimonyAmen(models.Model):
 
 
 class MemberProfile(models.Model):
-    email = models.EmailField(unique=True)
+    # IMPORTANT : on limite max_length à 191 pour éviter une clé unique > 1000 bytes en utf8mb4
+    email = models.EmailField(max_length=191, unique=True)
     first_name = models.CharField(max_length=150, blank=True, default="")
     last_name = models.CharField(max_length=150, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -97,20 +99,33 @@ class MemberProfile(models.Model):
 
 
 class VerificationCode(models.Model):
-    email = models.EmailField()
+    # max_length=191 => clé unique safe avec utf8mb4
+    email = models.EmailField(max_length=191, unique=True)
     first_name = models.CharField(max_length=100, blank=True, default="")
     last_name = models.CharField(max_length=100, blank=True, default="")
-    code = models.CharField(max_length=6)
+    # 64 caractères suffisent largement pour un code
+    code = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
     attempts = models.PositiveIntegerField(default=0)
 
     class Meta:
-        indexes = [models.Index(fields=["email", "code"])]
+        # IMPORTANT :
+        # - on enlève l'index composite (email, code) qui dépassait 1000 bytes
+        # - MySQL crée déjà un index unique sur email et sur code
+        # donc pas besoin d'indexes custom ici
+        pass
 
     @classmethod
-    def create_for(cls, email: str, first_name: str = "", last_name: str = "", ttl_minutes: int = 10, code: str | None = None):
+    def create_for(
+        cls,
+        email: str,
+        first_name: str = "",
+        last_name: str = "",
+        ttl_minutes: int = 10,
+        code: str | None = None,
+    ):
         if code is None:
             import random
             code = f"{random.randint(0, 999999):06d}"

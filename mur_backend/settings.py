@@ -10,12 +10,16 @@ from dotenv import load_dotenv
 # Bases
 # -------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Charge les variables depuis .env en local
 load_dotenv(BASE_DIR / '.env')
 
+# Sécurité & debug
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
-DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
+DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com']  
+
 
 # -------------------------------------------------------------------
 # Apps
@@ -74,12 +78,32 @@ WSGI_APPLICATION = 'mur_backend.wsgi.application'
 # -------------------------------------------------------------------
 # DB
 # -------------------------------------------------------------------
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': BASE_DIR / 'db.sqlite3',
+#    }
+# }
+
+# settings.
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        # Railway fournit ces variables automatiquement si tu lies le service MySQL
+        'NAME': os.getenv('MYSQLDATABASE', 'mur_temoin'),
+        'USER': os.getenv('MYSQLUSER', 'root'),
+        'PASSWORD': os.getenv('MYSQLPASSWORD', ''),
+        'HOST': os.getenv('MYSQLHOST', '127.0.0.1'),
+        'PORT': os.getenv('MYSQLPORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'ssl_mode': 'DISABLED',
+        },
     }
 }
+
+
 
 # -------------------------------------------------------------------
 # Auth
@@ -132,6 +156,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'wall' / 'static',
 ]
 
+# Whitenoise: stockage optimisé en prod
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MAX_AGE = 31536000  # 1 an
 
 # ====== Media ======
@@ -142,13 +168,13 @@ MEDIA_ROOT = BASE_DIR / "media"
 # -------------------------------------------------------------------
 # Email (SMTP)
 # -------------------------------------------------------------------
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').lower() == 'true'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'Eglisecmp@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'athy etqz ikhe nhyr')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@bunda21.org')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
