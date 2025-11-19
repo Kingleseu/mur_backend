@@ -145,8 +145,13 @@ def create_testimony(request):
 
 
 def testimony_detail(request, pk: int):
+    """
+    Anciennement cette vue essayait d'afficher un template wall/detail.html
+    (inexistant). On redirige maintenant vers la page principale du mur pour
+    éviter l'erreur TemplateDoesNotExist tout en conservant le contrôle d'accès.
+    """
     obj = get_object_or_404(Testimony, pk=pk)
-    return render(request, 'wall/detail.html', {'obj': obj})
+    return redirect('wall:home')
 
 
 # ---------------------- Auth via OTP (email) ----------------------

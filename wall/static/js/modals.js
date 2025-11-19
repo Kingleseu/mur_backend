@@ -2,10 +2,25 @@
 // MODALS - Auth, Testimony, Video
 // ================================================
 
+function focusDialogOnMobile(dialog) {
+  if (!dialog) return;
+  dialog.scrollTop = 0;
+  const inner = dialog.querySelector('.modal-content');
+  if (inner) inner.scrollTop = 0;
+  const isMobile = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+  if (isMobile) {
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      dialog.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 40);
+  }
+}
+
 function openAuthDialog() {
   const dialog = document.getElementById('authDialog');
   if (dialog) {
     dialog.showModal();
+    focusDialogOnMobile(dialog);
   }
 }
 
@@ -97,6 +112,7 @@ function openTestimonyModal(testimony) {
   };
   
   dialog.showModal();
+  focusDialogOnMobile(dialog);
 }
 
 function closeTestimonyModal() {
@@ -174,6 +190,7 @@ function openVideoModal(testimony) {
   };
   
   dialog.showModal();
+  focusDialogOnMobile(dialog);
   videoPlayer.play();
 }
 
@@ -206,6 +223,7 @@ function openTestimonyForm(force = false) {
   const dialog = document.getElementById('testimonyFormDialog');
   if (dialog) {
     dialog.showModal();
+    focusDialogOnMobile(dialog);
   }
 }
 

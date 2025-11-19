@@ -126,16 +126,42 @@ class VerificationCode(models.Model):
         ttl_minutes: int = 10,
         code: str | None = None,
     ):
-        if code is None:
-            import random
-            code = f"{random.randint(0, 999999):06d}"
-        return cls.objects.create(
+        """
+        GǸnǸre ou regǸnǸre un code OTP pour un email donnǸ. Comme le champ
+        `email` est unique sur le mod��le, on met �� jour l'enregistrement
+        existant pour Ǹviter les erreurs d'unicitǸ lors des connexions rǸpǸtǸes.
+        """
+        import random
+
+        def generate_code():
+            return f"{random.randint(0, 999999):06d}"
+
+        candidate = code or generate_code()
+        # S'assurer que le code alǸatoire n'entre pas en collision avec un autre
+        # enregistrement (champ `code` unique).
+        attempts_left = 10
+        while attempts_left > 0:
+            conflict = cls.objects.filter(code=candidate).exclude(email=email).exists()
+            if not conflict:
+                break
+            candidate = generate_code()
+            attempts_left -= 1
+        if attempts_left == 0:
+            raise RuntimeError("Impossible de gǸnǸrer un code OTP unique, rǸessayez.")
+
+        expires_at = timezone.now() + timedelta(minutes=ttl_minutes)
+        obj, _ = cls.objects.update_or_create(
             email=email,
-            first_name=first_name,
-            last_name=last_name,
-            code=code,
-            expires_at=timezone.now() + timedelta(minutes=ttl_minutes),
+            defaults={
+                'first_name': first_name,
+                'last_name': last_name,
+                'code': candidate,
+                'expires_at': expires_at,
+                'used': False,
+                'attempts': 0,
+            },
         )
+        return obj
 
     def is_valid(self, candidate: str) -> bool:
         now = timezone.now()

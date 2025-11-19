@@ -363,6 +363,26 @@
     };
   }
 
+  function toggleButtonLoading(btn, isLoading, loadingLabel) {
+    if (!btn) return;
+    if (isLoading) {
+      if (!btn.dataset.initialLabel) {
+        btn.dataset.initialLabel = btn.textContent;
+      }
+      if (loadingLabel) {
+        btn.textContent = loadingLabel;
+      }
+      btn.classList.add('loading');
+      btn.disabled = true;
+    } else {
+      btn.classList.remove('loading');
+      if (btn.dataset.initialLabel) {
+        btn.textContent = btn.dataset.initialLabel;
+      }
+      btn.disabled = false;
+    }
+  }
+
   async function requestOtp(options = {}) {
     const dlg = getDialog();
     const { fromResend = false } = options;
@@ -384,9 +404,9 @@
     }
 
     if (fromResend) {
-      if (resendBtn) resendBtn.disabled = true;
-    } else if (startBtn) {
-      startBtn.disabled = true;
+      toggleButtonLoading(resendBtn, true, 'Renvoi...');
+    } else {
+      toggleButtonLoading(startBtn, true, 'Envoi...');
     }
 
     try {
@@ -399,14 +419,18 @@
       showCodeStep(email);
       startCountdown(60);
       showToast('Code envoyé 📩', { kind: 'success' });
+      if (fromResend) {
+        toggleButtonLoading(resendBtn, false);
+        if (resendBtn) resendBtn.disabled = true;
+      }
     } catch (e) {
       showToast(e.message || 'Impossible d’envoyer le code');
-      if (fromResend && resendBtn) {
-        resendBtn.disabled = false;
+      if (fromResend) {
+        toggleButtonLoading(resendBtn, false);
       }
     } finally {
-      if (!fromResend && startBtn) {
-        startBtn.disabled = false;
+      if (!fromResend) {
+        toggleButtonLoading(startBtn, false);
       }
     }
   }
@@ -422,7 +446,7 @@
       return;
     }
 
-    if (verifyBtn) verifyBtn.disabled = true;
+    toggleButtonLoading(verifyBtn, true, 'Connexion...');
     try {
       await apiPost('/auth/verify/', { email, code });
       dlg.close();
@@ -437,7 +461,7 @@
     } catch (e) {
       showToast(e.message || 'Code invalide');
     } finally {
-      if (verifyBtn) verifyBtn.disabled = false;
+      toggleButtonLoading(verifyBtn, false);
     }
   }
 
@@ -495,28 +519,32 @@
         pointer-events: none;
       }
       .toast {
-        background: rgba(17, 24, 39, 0.95);
+        background: rgba(15, 23, 42, 0.98);
         color: #fff;
-        border-radius: 14px;
-        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
-        padding: 14px 18px;
+        border-radius: 16px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+        padding: 16px 20px;
         min-width: 280px;
-        max-width: min(380px, 90vw);
+        max-width: min(420px, 92vw);
         display: flex;
         align-items: center;
         gap: 12px;
         animation: toastIn .25s ease-out;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        backdrop-filter: blur(0) saturate(160%);
         pointer-events: auto;
+        font-size: 15px;
+        line-height: 1.5;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
       }
       .toast.success {
         border-color: rgba(34, 197, 94, 0.6);
       }
       .toast .toast-msg {
         flex: 1;
-        font-size: 14px;
-        line-height: 1.4;
+        font-size: 15px;
+        line-height: 1.5;
+        font-weight: 500;
       }
       .toast .toast-actions {
         display: flex;
