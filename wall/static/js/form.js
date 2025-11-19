@@ -274,9 +274,7 @@ function initializeTestimonyForm() {
     document.getElementById('videoUploadOptions').classList.remove('hidden');
     
     const videoPlayer = document.getElementById('videoPreviewPlayer');
-    videoPlayer.src = '';
   });
-  
   // Bouton annuler
   const cancelBtn = document.getElementById('formCancelBtn');
   cancelBtn.addEventListener('click', () => {

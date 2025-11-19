@@ -59,60 +59,62 @@
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '');
   }
 
-  function mapApiPayloadToFrontend(apiPayload, extras = {}){
-    if (!apiPayload) return null;
-    const fullText = (apiPayload.text || '').trim();
-    const preview = fullText.length > 240 ? `${fullText.slice(0, 240)}…` : fullText;
-    const imageUrls = Array.isArray(apiPayload.images)
-      ? apiPayload.images.map(img => img && img.url).filter(Boolean)
-      : [];
-    const normalizedStatus = (apiPayload.status || extras.status || '').toLowerCase();
 
-    const testimony = {
-      id: apiPayload.id,
-      title: apiPayload.title || '',
-      text: preview,
-      fullText,
-      color: apiPayload.postit_color || getSelectedColorHex(),
-      font: normalizeFontLabel(apiPayload.font_family, extras.fontName),
-      author: extras.author || (apiPayload.author || `${apiPayload.first_name || ''} ${apiPayload.last_name || ''}`).trim() || 'Anonyme',
-      location: extras.location || '',
-      date: formatDateLabel(apiPayload.created_at),
-      category: apiPayload.category || '',
-      amen_count: apiPayload.amen_count || 0
-    };
-    if (normalizedStatus){
-      testimony.status = normalizedStatus;
-    }
+// 🛠 Correction ici : empêcher les témoignages "pending" d’être affichés
+function mapApiPayloadToFrontend(apiPayload, extras = {}) {
 
-    if (imageUrls.length){
-      testimony.images = imageUrls;
-      testimony.thumbnail = testimony.thumbnail || imageUrls[0];
-    } else if (apiPayload.thumbnail){
-      testimony.thumbnail = apiPayload.thumbnail;
-    }
+  const normalizedStatus = (apiPayload.status || extras.status || '').toLowerCase();
+  if (normalizedStatus !== 'approved') return null;
 
-    const kind = (apiPayload.kind || extras.kind || 'text').toLowerCase();
-    if (kind === 'video'){
-      testimony.type = 'video';
-      testimony.videoUrl = apiPayload.video_url || apiPayload.video || '';
-      testimony.thumbnail = testimony.thumbnail || DEFAULT_VIDEO_THUMB;
-    }
+  const fullText = (apiPayload.text || '').trim();
+  const preview = fullText.length > 240 ? `${fullText.slice(0, 240)}…` : fullText;
+  const imageUrls = Array.isArray(apiPayload.images)
+    ? apiPayload.images.map(img => img && img.url).filter(Boolean)
+    : [];
 
-    return testimony;
+  const testimony = {
+    id: apiPayload.id,
+    title: apiPayload.title || '',
+    text: preview,
+    fullText,
+    color: apiPayload.postit_color || '#FFF6D9',
+    font: normalizeFontLabel(apiPayload.font_family, extras.fontName),
+    author: extras.author || (apiPayload.author || `${apiPayload.first_name || ''} ${apiPayload.last_name || ''}`).trim() || 'Anonyme',
+    location: extras.location || '',
+    date: formatDateLabel(apiPayload.created_at),
+    category: apiPayload.category || '',
+    amen_count: apiPayload.amen_count || 0
+  };
+
+  if (imageUrls.length){
+    testimony.images = imageUrls;
+    testimony.thumbnail = testimony.thumbnail || imageUrls[0];
+  } else if (apiPayload.thumbnail){
+    testimony.thumbnail = apiPayload.thumbnail;
   }
 
-  function prependTestimony(testimony){
-    if (!testimony) return null;
-    if (!window.CONFIG.TESTIMONIES || !Array.isArray(window.CONFIG.TESTIMONIES)){
-      window.CONFIG.TESTIMONIES = [];
-    }
-    window.CONFIG.TESTIMONIES.unshift(testimony);
-    if (window.STATE && window.STATE.amenCounts){
-      window.STATE.amenCounts[testimony.id] = testimony.amen_count || 0;
-    }
-    return testimony;
+  const kind = (apiPayload.kind || extras.kind || 'text').toLowerCase();
+  if (kind === 'video'){
+    testimony.type = 'video';
+    testimony.videoUrl = apiPayload.video_url || apiPayload.video || '';
+    testimony.thumbnail = testimony.thumbnail || DEFAULT_VIDEO_THUMB;
   }
+
+  return testimony;
+}
+function prependTestimony(testimony){
+  if (!testimony || testimony.status !== 'approved') return null;
+
+  if (!window.CONFIG.TESTIMONIES || !Array.isArray(window.CONFIG.TESTIMONIES)){
+    window.CONFIG.TESTIMONIES = [];
+  }
+  window.CONFIG.TESTIMONIES.unshift(testimony);
+
+  if (window.STATE && window.STATE.amenCounts){
+    window.STATE.amenCounts[testimony.id] = testimony.amen_count || 0;
+  }
+  return testimony;
+}
 
   function ensureFileObject(fileOrBlob){
     if (!fileOrBlob) return null;
@@ -177,30 +179,32 @@
     window.dispatchEvent(new CustomEvent('testimonyAdded'));
   }
 
-  function handleServerSuccess(payload, extras = {}){
-    if (!payload) return;
-    const status = (typeof payload.status === 'string') ? payload.status.toLowerCase() : '';
-    if (status === 'approved') {
-      const testimony = mapApiPayloadToFrontend(payload, extras);
-      if (testimony){
-        testimony.status = 'approved';
-        prependTestimony(testimony);
-        refreshUI();
-      }
-      if (window.showToast){
-        window.showToast('Témoignage approuvé et publié.', { kind: 'success' });
-      } else {
-        alert('Témoignage approuvé et publié.');
-      }
-      return;
-    }
+function handleServerSuccess(payload, extras = {}) {
+  const status = (payload && typeof payload.status === 'string')
+    ? payload.status.toLowerCase()
+    : '';
 
+  if (status === 'approved') {
+    const testimony = mapApiPayloadToFrontend(payload, extras);
+    if (testimony){
+      testimony.status = 'approved';
+      prependTestimony(testimony);
+      refreshUI();
+    }
+    if (window.showToast){
+      window.showToast('Témoignage approuvé et publié.', { kind: 'success' });
+    } else {
+      alert('Témoignage approuvé et publié.');
+    }
+  } else {
     if (window.showToast){
       window.showToast('Témoignage envoyé. Il sera affiché après validation.', { kind: 'success' });
     } else {
       alert('Témoignage envoyé. Il sera affiché après validation.');
     }
+    // ❗ Ne pas injecter le témoignage dans la grille s’il est en attente
   }
+}
 
   function ensureAuthenticated(){
     if (window.STATE && window.STATE.userEmail) return true;

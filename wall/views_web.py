@@ -137,7 +137,7 @@ def create_testimony(request):
     if request.method == 'POST':
         form = TestimonyForm(request.POST, request.FILES)
         if form.is_valid():
-            inst = form.save(request=request, auto_approve=False)
+            inst = form.save(request=request)  # ✅ auto_approve supprimé
             return redirect('wall:home')
     else:
         form = TestimonyForm()

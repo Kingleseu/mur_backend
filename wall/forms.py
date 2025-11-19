@@ -48,7 +48,7 @@ class TestimonyForm(forms.Form):
             self.add_error("video", "Une URL ou un fichier vidéo est requis.")
         return cleaned
 
-    def save(self, *, request=None, auto_approve=False):
+    def save(self, *, request=None):
         name = self.cleaned_data['name'].strip()
         parts = name.split()
         first_name = parts[0] if parts else ''
@@ -67,11 +67,10 @@ class TestimonyForm(forms.Form):
             postit_color=self.cleaned_data.get('postit_color') or '',
             font_family=self.cleaned_data.get('font_family') or '',
             category=self.cleaned_data.get('category') or '',
-            status='approved' if auto_approve else 'pending',
+            status='pending',  # ✅ Forcer à "pending"
         )
 
         video_file = self.cleaned_data.get('video_file') or (request.FILES.get('video_file') if request else None)
-
         if video_file:
             instance.video_file.save(video_file.name, video_file, save=True)
 
@@ -81,5 +80,6 @@ class TestimonyForm(forms.Form):
                 TestimonyImage.objects.create(testimony=instance, image=f)
 
         return instance
+
 
 
