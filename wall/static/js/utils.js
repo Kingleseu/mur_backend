@@ -81,6 +81,17 @@ function scrollToWall() {
   }
 }
 
+function getShareUrl(testimony) {
+  if (testimony && testimony.shareUrl) {
+    return testimony.shareUrl;
+  }
+  const base = (window.CONFIG && window.CONFIG.SITE_URL) || window.location.origin;
+  if (testimony && testimony.id) {
+    return `${base.replace(/\/$/, '')}/testimony/${testimony.id}/`;
+  }
+  return window.location.href;
+}
+
 
 function getCSRFToken() {
   const name = 'csrftoken=';
@@ -173,19 +184,40 @@ async function handleAmen(id, event) {
 
 function handleShare(testimony, platform) {
   const text = `${testimony.title} - Mur de Témoignages Bunda21`;
-  const url = window.location.href;
+  const url = getShareUrl(testimony);
+  
+  if (platform === 'native' && navigator.share) {
+    navigator.share({ title: testimony.title, text, url }).catch(() => {});
+    return;
+  }
 
   switch (platform) {
     case 'twitter':
+    case 'x':
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
       break;
-    case 'whatsapp':
-      window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+    case 'whatsapp': {
+      const waBase = /Android|iPhone/i.test(navigator.userAgent || '')
+        ? 'https://wa.me/?text='
+        : 'https://api.whatsapp.com/send?text=';
+      window.open(`${waBase}${encodeURIComponent(`${text} ${url}`)}`, '_blank');
       break;
+    }
     case 'copy':
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Lien copié !');
-      });
+    default:
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          if (window.showToast) {
+            window.showToast('Lien copié dans le presse-papiers.', { kind: 'success' });
+          } else {
+            alert('Lien copié !');
+          }
+        }).catch(() => {
+          alert('Copiez ce lien : ' + url);
+        });
+      } else {
+        alert('Copiez ce lien : ' + url);
+      }
       break;
   }
   
@@ -207,6 +239,7 @@ window.UTILS = {
   animateCounter,
   triggerConfetti,
   scrollToWall,
+  getShareUrl,
   handleAmen,
   handleShare
 };

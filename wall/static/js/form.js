@@ -277,10 +277,6 @@ function initializeTestimonyForm() {
     videoPlayer.src = '';
   });
   
-  // Soumission du formulaire
-  const testimonyForm = document.getElementById('testimonyForm');
-  testimonyForm.addEventListener('submit', handleFormSubmit);
-  
   // Bouton annuler
   const cancelBtn = document.getElementById('formCancelBtn');
   cancelBtn.addEventListener('click', () => {

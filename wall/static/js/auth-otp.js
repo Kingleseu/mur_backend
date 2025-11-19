@@ -73,21 +73,21 @@
   let countdownTimer = null;
   let countdownRemaining = 0;
 
-  window.AUTH_OTP = window.AUTH_OTP || {
-    nextAction: null,
-    ensureAuthThen(fn) {
-      if (window.STATE && window.STATE.userName) {
-        if (typeof fn === 'function') fn();
-        return;
-      }
-      this.nextAction = fn || null;
-      showToast('Connectez-vous pour partager votre témoignage', {
-        actionText: 'Se connecter',
-        onAction: () => openAuthDialogOTP()
-      });
-      openAuthDialogOTP();
+  const AUTH = window.AUTH_OTP || {};
+  AUTH.nextAction = AUTH.nextAction || null;
+  AUTH.ensureAuthThen = function ensureAuthThen(fn) {
+    if (window.STATE && window.STATE.userName) {
+      if (typeof fn === 'function') fn();
+      return;
     }
+    AUTH.nextAction = fn || null;
+    showToast('Connectez-vous pour partager votre témoignage', {
+      actionText: 'Se connecter',
+      onAction: () => openAuthDialogOTP()
+    });
+    openAuthDialogOTP();
   };
+  window.AUTH_OTP = AUTH;
 
   function getCSRF() {
     const name = 'csrftoken=';
@@ -451,25 +451,20 @@
 
   function patchAuthButtons() {
     const signInBtn = document.getElementById('signInBtn');
-    if (signInBtn) {
-      const clone = signInBtn.cloneNode(true);
-      signInBtn.parentNode.replaceChild(clone, signInBtn);
-      clone.addEventListener('click', openAuthDialogOTP);
-    }
-    const userBtn = document.getElementById('userMenuBtn');
-    if (userBtn) {
-      const clone2 = userBtn.cloneNode(true);
-      userBtn.parentNode.replaceChild(clone2, userBtn);
-      clone2.addEventListener('click', async () => {
-        if (confirm('Se déconnecter ?')) {
-          await signOut();
-        }
+    if (signInBtn && !signInBtn.dataset.otpReady) {
+      signInBtn.dataset.otpReady = '1';
+      signInBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openAuthDialogOTP();
       });
     }
+
   }
 
   if (!window.MODALS) window.MODALS = {};
   window.MODALS.openAuthDialog = openAuthDialogOTP;
+  window.AUTH_OTP.signOut = signOut;
+  window.AUTH_OTP.openDialog = openAuthDialogOTP;
 
   (function wrapOpenTestimonyForm() {
     const modals = window.MODALS || {};
@@ -488,14 +483,68 @@
     const style = document.createElement('style');
     style.id = 'toast-styles';
     style.textContent = `
-      #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
-      .toast { background:#fff; color:#111; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.15); padding:12px 16px; min-width:280px; max-width:360px; display:flex; align-items:center; gap:12px; animation: toastIn .25s ease-out; border:1px solid rgba(0,0,0,.06); }
-      .toast.success { border-color:#10b981; }
-      .toast .toast-msg { flex:1; font-size:14px; line-height:1.35; }
-      .toast .toast-actions { display:flex; align-items:center; gap:8px; }
-      .toast .toast-btn { background:#950000; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; font-size:13px; }
-      .toast .toast-close { background:transparent; border:none; cursor:pointer; color:#666; font-size:18px; line-height:1; }
-      @keyframes toastIn { from { opacity:0; transform: translateY(-6px)} to { opacity:1; transform: translateY(0)} }
+      #toast-container {
+        position: fixed;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2147483647;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+      }
+      .toast {
+        background: rgba(17, 24, 39, 0.95);
+        color: #fff;
+        border-radius: 14px;
+        box-shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+        padding: 14px 18px;
+        min-width: 280px;
+        max-width: min(380px, 90vw);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: toastIn .25s ease-out;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(6px);
+        pointer-events: auto;
+      }
+      .toast.success {
+        border-color: rgba(34, 197, 94, 0.6);
+      }
+      .toast .toast-msg {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .toast .toast-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toast .toast-btn {
+        background: #fbbf24;
+        color: #1f2937;
+        border: none;
+        border-radius: 999px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .toast .toast-close {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        color: rgba(255,255,255,0.8);
+        font-size: 18px;
+        line-height: 1;
+      }
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
     `;
     document.head.appendChild(style);
   }

@@ -84,6 +84,7 @@
   config.POST_IT_COLORS = config.POST_IT_COLORS || POST_IT_COLORS;
   config.FONT_STYLES = config.FONT_STYLES || FONT_STYLES;
   config.ITEMS_PER_PAGE = config.ITEMS_PER_PAGE || 9;
+  config.SITE_URL = config.SITE_URL || ((typeof window !== 'undefined' && window.location) ? window.location.origin : '');
 
   window.CONFIG = config;
 })();
