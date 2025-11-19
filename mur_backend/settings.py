@@ -84,59 +84,22 @@ WSGI_APPLICATION = 'mur_backend.wsgi.application'
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 # }
-
-# Base DB settings
-MYSQL_DB = os.getenv('MYSQLDATABASE')
-MYSQL_USER = os.getenv('MYSQLUSER')
-MYSQL_PWD = os.getenv('MYSQLPASSWORD')
-MYSQL_HOST = os.getenv('MYSQLHOST')
-MYSQL_PORT = os.getenv('MYSQLPORT')
-
-# Si les variables Railway/Render sont pr�sentes, on les utilise en priorit�
-if all([MYSQL_DB, MYSQL_USER, MYSQL_PWD, MYSQL_HOST, MYSQL_PORT]):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': MYSQL_DB,
-            'USER': MYSQL_USER,
-            'PASSWORD': MYSQL_PWD,
-            'HOST': MYSQL_HOST,
-            'PORT': MYSQL_PORT,
-            'OPTIONS': {
-                'ssl': {'ssl_disabled': True},
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                'connect_timeout': 5,  # �chouer vite si la DB n'est pas joignable
-            },
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('MYSQL_DATABASE', 'railway'),
+        'USER': os.getenv('MYSQLUSER', 'root'),
+        'PASSWORD': os.getenv('MYSQLPASSWORD', 'ncPaEzqJUZCIuPZLBahNEroaMZUBWZfZ'),
+        'HOST': os.getenv('MYSQLHOST', 'mysql.railway.internal'),
+        'PORT': os.getenv('MYSQLPORT', '3306'),
+        'OPTIONS': {
+            'ssl': {'ssl_disabled': True},
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'connect_timeout': 5,
+        },
     }
-# Sinon, on reste sur la config locale (variables HOST/PORT/USER/PASSWORD) pour dev
-elif os.getenv("DJANGO_ENV") != "production":
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.getenv('DATABASE', 'mur_temoin'),
-            'USER': os.getenv('USER', 'root'),
-            'PASSWORD': os.getenv('PASSWORD', ''),
-            'HOST': os.getenv('HOST', '127.0.0.1'),
-            'PORT': os.getenv('PORT', '3306'),
-            'OPTIONS': {
-                'ssl': {'ssl_disabled': True},
-                'charset': 'utf8mb4',
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                'connect_timeout': 5,
-            },
-        }
-    }
-# Fallback s�curis�: SQLite si aucune config MySQL n'est trouv�e
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
+}
 
 
 
