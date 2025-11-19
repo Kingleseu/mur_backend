@@ -193,6 +193,16 @@ dialog[open] {
     border-radius: 0;
     overflow-y: auto;
   }
+
+  .testimony-modal .modal-content,
+  .video-modal .modal-content {
+    height: auto;
+    max-height: 85vh;
+    border-radius: 28px 28px 0 0;
+    margin-top: auto;
+    overflow-y: auto;
+    padding-bottom: 2.5rem;
+  }
   
   /* Formulaire plein écran */
   #testimonyFormDialog .modal-content.testimony-form-modal-large {

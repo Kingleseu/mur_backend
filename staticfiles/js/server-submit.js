@@ -288,6 +288,10 @@ function handleServerSuccess(payload, extras = {}) {
       if (!title || !testimonyText){
         throw new Error('Veuillez remplir tous les champs obligatoires');
       }
+      let limitedText = testimonyText.slice(0, 500);
+      if (testimonyText.length > 500 && window.showToast) {
+        window.showToast('Votre témoignage a été réduit à 500 caractères maximum.');
+      }
 
       const category = resolveCategoryValue();
       const colorHex = getSelectedColorHex();
@@ -300,7 +304,7 @@ function handleServerSuccess(payload, extras = {}) {
       fd.append('first_name', first);
       fd.append('last_name', last);
       fd.append('title', title);
-      fd.append('text', testimonyText);
+      fd.append('text', limitedText);
       fd.append('verification_type', 'email');
       fd.append('email', window.STATE.userEmail || '');
       fd.append('postit_color', colorHex);

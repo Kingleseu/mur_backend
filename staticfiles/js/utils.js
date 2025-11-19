@@ -147,6 +147,18 @@ async function toggleAmenRequest(id) {
 }
 
 async function handleAmen(id, event) {
+  if (!window.STATE || !window.STATE.userEmail) {
+    if (window.AUTH_OTP && typeof window.AUTH_OTP.ensureAuthThen === 'function') {
+      window.AUTH_OTP.ensureAuthThen(() => {});
+    }
+    if (window.showToast) {
+      window.showToast('Connectez-vous pour dire Amen.');
+    } else {
+      alert('Connectez-vous pour dire Amen.');
+    }
+    return;
+  }
+
   const currentCount = getAmensForTestimony(id);
   setAmenButtonsState(id, { count: currentCount, loading: true });
   try {

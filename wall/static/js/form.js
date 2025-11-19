@@ -113,7 +113,15 @@ function initializeTestimonyForm() {
   });
   
   // Sélecteur de couleur
-  const colorSelector = document.getElementById('colorSelector');
+const colorSelector = document.getElementById('colorSelector');
+
+function showFormshowFormAlert(message) {
+  if (window.showToast) {
+    window.showToast(message);
+  } else {
+    showFormAlert(message);
+  }
+}
   const colorPopover = document.getElementById('colorPopover');
   
   colorSelector.addEventListener('click', (e) => {
@@ -198,9 +206,27 @@ function initializeTestimonyForm() {
   // Compteur de caractères
   const testimonyTextarea = document.getElementById('formTestimony');
   const charCount = document.getElementById('charCount');
+  const MAX_TESTIMONY_CHARS = 500;
+  let charLimitNotified = false;
+  if (charCount) {
+    const initialLen = testimonyTextarea.value ? testimonyTextarea.value.length : 0;
+    charCount.textContent = `${initialLen}/${MAX_TESTIMONY_CHARS}`;
+  }
   
   testimonyTextarea.addEventListener('input', (e) => {
-    charCount.textContent = e.target.value.length;
+    const value = e.target.value;
+    if (value.length > MAX_TESTIMONY_CHARS) {
+      e.target.value = value.slice(0, MAX_TESTIMONY_CHARS);
+      if (!charLimitNotified && typeof window.showToast === 'function') {
+        window.showToast('Maximum 500 caractères pour votre témoignage.');
+      }
+      charLimitNotified = true;
+    } else {
+      charLimitNotified = false;
+    }
+    if (charCount) {
+      charCount.textContent = `${e.target.value.length}/${MAX_TESTIMONY_CHARS}`;
+    }
   });
   
   // Upload de photos
@@ -217,7 +243,7 @@ function initializeTestimonyForm() {
     const remainingSlots = 5 - currentCount;
     
     if (remainingSlots <= 0) {
-      alert('Vous pouvez ajouter maximum 5 photos');
+      showFormshowFormAlert('Vous pouvez ajouter maximum 5 photos');
       photoInput.value = '';
       return;
     }
@@ -307,7 +333,7 @@ function renderPhotosPreview() {
 async function startRecording() {
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Votre navigateur ne supporte pas l\'enregistrement vidéo. Veuillez uploader une vidéo à la place.');
+      showFormshowFormAlert('Votre navigateur ne supporte pas l\'enregistrement vidéo. Veuillez uploader une vidéo à la place.');
       return;
     }
     
@@ -358,7 +384,7 @@ async function startRecording() {
     setTimeout(() => {
       if (window.STATE.mediaRecorder && window.STATE.mediaRecorder.state === 'recording') {
         stopRecording();
-        alert('Enregistrement arrêté automatiquement après 2 minutes');
+        showFormAlert('Enregistrement arrêté automatiquement après 2 minutes');
       }
     }, 120000);
     
@@ -366,11 +392,11 @@ async function startRecording() {
     console.error('Error accessing camera:', error);
     
     if (error.name === 'NotAllowedError') {
-      alert('Accès à la caméra refusé. Veuillez autoriser l\'accès dans les paramètres de votre navigateur, ou choisissez d\'uploader une vidéo existante.');
+      showFormAlert('Accès à la caméra refusé. Veuillez autoriser l\'accès dans les paramètres de votre navigateur, ou choisissez d\'uploader une vidéo existante.');
     } else if (error.name === 'NotFoundError') {
-      alert('Aucune caméra détectée sur votre appareil. Veuillez uploader une vidéo à la place.');
+      showFormAlert('Aucune caméra détectée sur votre appareil. Veuillez uploader une vidéo à la place.');
     } else {
-      alert('Impossible d\'accéder à la caméra. Veuillez uploader une vidéo existante à la place.');
+      showFormAlert('Impossible d\'accéder à la caméra. Veuillez uploader une vidéo existante à la place.');
     }
   }
 }
@@ -390,7 +416,7 @@ function handleVideoUpload(e) {
   if (!file) return;
   
   if (file.size > 120 * 1024 * 1024) {
-    alert('La vidéo est trop volumineuse. Maximum 120MB.');
+    showFormAlert('La vidéo est trop volumineuse. Maximum 120MB.');
     return;
   }
   

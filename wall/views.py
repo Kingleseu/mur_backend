@@ -70,23 +70,20 @@ class TestimonyViewSet(mixins.CreateModelMixin,
         Enregistre un Amen pour un témoignage donné. Idempotent par session.
         """
         testimony = self.get_object()
+        verified = request.session.get('verified_user') or {}
+        user_email = verified.get('email')
+        if not user_email:
+            return Response(
+                {'detail': 'Authentification requise pour dire Amen.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         if not request.session.session_key:
             request.session.save()
-        session_key = request.session.session_key
-        if not session_key:
-            return Response({'detail': 'Session requise.'}, status=status.HTTP_400_BAD_REQUEST)
+        session_key = request.session.session_key or ''
 
-        verified = request.session.get('verified_user') or {}
-        user_email = verified.get('email', '')
-
-        filter_kwargs = {'testimony': testimony}
-        defaults = {}
-        if user_email:
-            filter_kwargs['user_email'] = user_email
-            defaults['session_key'] = session_key
-        else:
-            filter_kwargs['session_key'] = session_key
-            defaults['user_email'] = ''
+        filter_kwargs = {'testimony': testimony, 'user_email': user_email}
+        defaults = {'session_key': session_key}
 
         amen = TestimonyAmen.objects.filter(**filter_kwargs).first()
         if amen:

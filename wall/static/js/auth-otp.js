@@ -153,8 +153,16 @@
   async function signOut() {
     try {
       await apiPost('/auth/logout/', {});
-    } catch {}
+    } catch (error) {
+      console.warn('logout failed', error);
+    }
+    window.STATE.userName = null;
+    window.STATE.userEmail = '';
+    localStorage.removeItem('bunda21_user');
     await checkAuth();
+    if (typeof window.showToast === 'function') {
+      window.showToast('Déconnexion réussie 🙏', { kind: 'success' });
+    }
   }
 
   function getDialog() {
@@ -507,7 +515,7 @@
     const style = document.createElement('style');
     style.id = 'toast-styles';
     style.textContent = `
-      #toast-container {
+      .toast-container {
         position: fixed;
         top: 24px;
         left: 50%;
@@ -579,11 +587,18 @@
 
   function showToast(message, opts) {
     ensureToastStyles();
-    let container = document.getElementById('toast-container');
+    const host = document.querySelector('dialog[open]') || document.body;
+    const useBodyHost = host === document.body;
+    let container = useBodyHost
+      ? document.getElementById('toast-container')
+      : host.querySelector('.toast-container');
     if (!container) {
       container = document.createElement('div');
-      container.id = 'toast-container';
-      document.body.appendChild(container);
+      container.className = 'toast-container';
+      if (useBodyHost) {
+        container.id = 'toast-container';
+      }
+      host.appendChild(container);
     }
     const toast = document.createElement('div');
     toast.className = `toast${opts && opts.kind === 'success' ? ' success' : ''}`;
