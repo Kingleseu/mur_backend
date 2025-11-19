@@ -58,69 +58,74 @@ def _absolute(request, url: str) -> str:
         return request.build_absolute_uri(url)
     return url
 
-
 @ensure_csrf_cookie
 def home(request):
-    kind = request.GET.get('kind')  # 'text' | 'video' | None
-    qs = Testimony.objects.filter(status='approved').annotate(
-        amen_count=Count('amen_entries')
-    ).order_by('-created_at')
-    if kind in ('text', 'video'):
-        qs = qs.filter(kind=kind)
+    try:
+        kind = request.GET.get('kind')  # 'text' | 'video' | None
 
-    # Serialize a subset to match the static JS structure
-    testimonies = []
-    for t in qs[:200]:  # cap to avoid huge payloads
-        base = {
-            'id': t.id,
-            'title': t.title,
-            'text': (t.text or '')[:240],
-            'fullText': t.text or '',
-            'color': _normalize_color(t.postit_color),
-            'font': _normalize_font(t.font_family or ''),
-            'author': f"{t.first_name} {t.last_name}".strip() or 'Anonyme',
-            'location': '',
-            # Cross-platform strftime: avoid '%-d' (Linux) / '%#d' (Windows)
-            'date': (f"{t.created_at.day} {t.created_at.strftime('%b')}" if hasattr(t.created_at, 'strftime') else ''),
-            'category': t.category or '',
-            'amen_count': getattr(t, 'amen_count', t.amen_entries.count()),
-        }
-        images_qs = list(t.images.all()[:5])
-        if images_qs:
-            valid_urls = []
-            for img in images_qs:
-                if not (img.image and img.image.name):
-                    continue
-                if img.image.storage.exists(img.image.name):
-                    valid_urls.append(_absolute(request, img.image.url))
-            if valid_urls:
-                base['images'] = valid_urls
-                base.setdefault('thumbnail', valid_urls[0])
+        qs = Testimony.objects.filter(status='approved').annotate(
+            amen_count=Count('amen_entries')
+        ).order_by('-created_at')
 
-        if t.kind == 'video':
-            thumb_file = ''
-            first_image = t.images.first()
-            if first_image and first_image.image:
-                thumb_file = first_image.image.url
-            video_url = ''
-            if t.video_file and t.video_file.name and t.video_file.storage.exists(t.video_file.name):
-                path = t.video_file.url
-                video_url = _absolute(request, path)
-            elif t.video:
-                video_url = t.video
-            base.update({
-                'type': 'video',
-                'thumbnail': _absolute(request, thumb_file),
-                'videoUrl': video_url,
-                'duration': '',
-            })
-        testimonies.append(base)
+        if kind in ('text', 'video'):
+            qs = qs.filter(kind=kind)
 
-    testimonies_json = json.dumps(testimonies, ensure_ascii=False)
+        testimonies = []
+        for t in qs[:200]:  # cap pour éviter les gros payloads
+            base = {
+                'id': t.id,
+                'title': t.title,
+                'text': (t.text or '')[:240],
+                'fullText': t.text or '',
+                'color': _normalize_color(t.postit_color),
+                'font': _normalize_font(t.font_family or ''),
+                'author': f"{t.first_name} {t.last_name}".strip() or 'Anonyme',
+                'location': '',
+                'date': (f"{t.created_at.day} {t.created_at.strftime('%b')}" if hasattr(t.created_at, 'strftime') else ''),
+                'category': t.category or '',
+                'amen_count': getattr(t, 'amen_count', t.amen_entries.count()),
+            }
 
-    return render(request, 'wall/vanilla_home.html', {
-        'testimonies_json': testimonies_json,
-    })
+            images_qs = list(t.images.all()[:5])
+            if images_qs:
+                valid_urls = []
+                for img in images_qs:
+                    if not (img.image and img.image.name):
+                        continue
+                    if img.image.storage.exists(img.image.name):
+                        valid_urls.append(_absolute(request, img.image.url))
+                if valid_urls:
+                    base['images'] = valid_urls
+                    base.setdefault('thumbnail', valid_urls[0])
+
+            if t.kind == 'video':
+                thumb_file = ''
+                first_image = t.images.first()
+                if first_image and first_image.image:
+                    thumb_file = first_image.image.url
+                video_url = ''
+                if t.video_file and t.video_file.name and t.video_file.storage.exists(t.video_file.name):
+                    video_url = _absolute(request, t.video_file.url)
+                elif t.video:
+                    video_url = t.video
+                base.update({
+                    'type': 'video',
+                    'thumbnail': _absolute(request, thumb_file),
+                    'videoUrl': video_url,
+                    'duration': '',
+                })
+
+            testimonies.append(base)
+
+        testimonies_json = json.dumps(testimonies, ensure_ascii=False)
+        return render(request, 'wall/vanilla_home.html', {'testimonies_json': testimonies_json})
+
+    except Exception as e:
+        logging.exception("Erreur dans la vue home (testimonies)")
+        return render(request, 'wall/vanilla_home.html', {
+            'testimonies_json': '[]',
+            'error': str(e) if settings.DEBUG else "Une erreur est survenue. Merci de réessayer plus tard."
+        })
 
 
 def create_testimony(request):
