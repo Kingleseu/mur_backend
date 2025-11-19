@@ -18,7 +18,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
 #DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 DEBUG=True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com','.railway.app']  
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com','.railway.app','temoignage.eglisecmp.com']  
 
 
 # -------------------------------------------------------------------
