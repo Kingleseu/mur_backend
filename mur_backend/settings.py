@@ -84,23 +84,24 @@ WSGI_APPLICATION = 'mur_backend.wsgi.application'
 #        'NAME': BASE_DIR / 'db.sqlite3',
 #    }
 # }
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('MYSQLDATABASE','u911414181_citecmp'),
-        'USER': os.getenv('MYSQLUSER','u911414181_sitecmp'),
-        'PASSWORD': os.getenv('MYSQLPASSWORD','Jesusmas1234@'),
-        'HOST': os.getenv('MYSQLHOST','temoignage.eglisecmp.com'),
+        'NAME': os.getenv('MYSQLDATABASE'),
+        'USER': os.getenv('MYSQLUSER'),
+        'PASSWORD': os.getenv('MYSQLPASSWORD'),
+        'HOST': os.getenv('MYSQLHOST'),
         'PORT': os.getenv('MYSQLPORT', '3306'),
         'OPTIONS': {
             'ssl': {'ssl_disabled': True},
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'connect_timeout': 5,
+            'connect_timeout': 10,
         },
     }
 }
-
 
 
 
