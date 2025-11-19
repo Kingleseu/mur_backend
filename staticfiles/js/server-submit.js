@@ -66,6 +66,7 @@
     const imageUrls = Array.isArray(apiPayload.images)
       ? apiPayload.images.map(img => img && img.url).filter(Boolean)
       : [];
+    const normalizedStatus = (apiPayload.status || extras.status || '').toLowerCase();
 
     const testimony = {
       id: apiPayload.id,
@@ -80,6 +81,9 @@
       category: apiPayload.category || '',
       amen_count: apiPayload.amen_count || 0
     };
+    if (normalizedStatus){
+      testimony.status = normalizedStatus;
+    }
 
     if (imageUrls.length){
       testimony.images = imageUrls;
@@ -173,15 +177,40 @@
     window.dispatchEvent(new CustomEvent('testimonyAdded'));
   }
 
+  function handleServerSuccess(payload, extras = {}){
+    if (!payload) return;
+    const status = (typeof payload.status === 'string') ? payload.status.toLowerCase() : '';
+    if (status === 'approved') {
+      const testimony = mapApiPayloadToFrontend(payload, extras);
+      if (testimony){
+        testimony.status = 'approved';
+        prependTestimony(testimony);
+        refreshUI();
+      }
+      if (window.showToast){
+        window.showToast('Témoignage approuvé et publié.', { kind: 'success' });
+      } else {
+        alert('Témoignage approuvé et publié.');
+      }
+      return;
+    }
+
+    if (window.showToast){
+      window.showToast('Témoignage envoyé. Il sera affiché après validation.', { kind: 'success' });
+    } else {
+      alert('Témoignage envoyé. Il sera affiché après validation.');
+    }
+  }
+
   function ensureAuthenticated(){
     if (window.STATE && window.STATE.userEmail) return true;
     if (window.AUTH_OTP && window.AUTH_OTP.ensureAuthThen){
       window.AUTH_OTP.ensureAuthThen(() => {});
     }
     if (window.showToast) {
-      window.showToast('Connectez-vous avant de publier votre tÃ©moignage.');
+      window.showToast('Connectez-vous avant de publier votre témoignage.');
     } else {
-      alert('Connectez-vous avant de publier votre tÃ©moignage.');
+      alert('Connectez-vous avant de publier votre témoignage.');
     }
     return false;
   }
@@ -195,18 +224,29 @@
     const original = window.FORM.handleFormSubmit;
     const formEl = document.getElementById('testimonyForm');
 
+
     async function serverHandler(e){
       e.preventDefault();
 
       if (!ensureAuthenticated()) return;
 
+      const formTarget = e.target.closest('form') || formEl;
+      const submitBtn = formTarget ? formTarget.querySelector('.submit-btn') : null;
+      const cancelBtn = formTarget ? formTarget.querySelector('.cancel-btn') : null;
+      const initialLabel = submitBtn ? submitBtn.textContent : '';
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+        submitBtn.textContent = 'Envoi en cours...';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = true;
+      }
+
       const isVideo = (window.STATE && window.STATE.testimonyType === 'video');
       try{
-        if (isVideo){
-          await handleVideoSubmit();
-        } else {
-          await handleTextSubmit();
-        }
+        const result = isVideo ? await handleVideoSubmit() : await handleTextSubmit();
 
         if (window.MODALS && window.MODALS.closeTestimonyForm) {
           window.MODALS.closeTestimonyForm();
@@ -217,10 +257,21 @@
           window.FORM.resetForm();
         }
 
-        refreshUI();
+        if (result && result.payload) {
+          handleServerSuccess(result.payload, result.extras || {});
+        }
       } catch(err){
-        if (window.showToast) window.showToast(err.message || 'Ã‰chec de la soumission');
-        else alert(err.message || 'Ã‰chec de la soumission');
+        if (window.showToast) window.showToast(err.message || 'Échec de la soumission');
+        else alert(err.message || 'Échec de la soumission');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('loading');
+          submitBtn.textContent = initialLabel || 'Soumettre mon témoignage';
+        }
+        if (cancelBtn) {
+          cancelBtn.disabled = false;
+        }
       }
     }
 
@@ -257,34 +308,33 @@
         if (file) fd.append('images', file);
       });
 
-      const created = await postFormData(fd);
-      const mapped = mapApiPayloadToFrontend(created, {
-        fontName,
-        author: window.STATE.userName || `${first} ${last}`.trim(),
-        location: window.STATE.userLocation || '',
-        kind: 'text'
-      });
-      prependTestimony(mapped);
-
-      if (window.showToast){
-        window.showToast('TǸmoignage envoyǸ. En attente de validation.', { kind: 'success' });
-      }
+      const payload = await postFormData(fd);
+      return {
+        payload,
+        extras: {
+          kind: 'text',
+          author: window.STATE.userName || `${first} ${last}`.trim(),
+          fontName,
+          location: window.STATE.userLocation || '',
+          color: colorHex
+        }
+      };
     }
 
     async function handleVideoSubmit(){
       const titleEl = document.getElementById('formTitle');
       const title = titleEl ? titleEl.value.trim() : '';
       if (!title){
-        throw new Error('Veuillez renseigner un titre pour votre tǸmoignage vidǸo.');
+        throw new Error('Veuillez renseigner un titre pour votre témoignage vidéo.');
       }
 
       const rawFile = window.STATE && window.STATE.videoFile;
       if (!rawFile){
-        throw new Error('Veuillez enregistrer ou sǸlectionner une vidǸo.');
+        throw new Error('Veuillez enregistrer ou sélectionner une vidéo.');
       }
       const videoFile = ensureFileObject(rawFile);
       if (!videoFile){
-        throw new Error('Impossible de prǸparer la vidǸo. RǸessayez.');
+        throw new Error('Impossible de préparer la vidéo. Réessayez.');
       }
 
       const category = resolveCategoryValue();
@@ -306,18 +356,17 @@
       if (category) fd.append('category', category);
       fd.append('video_file', videoFile);
 
-      const created = await postFormData(fd);
-      const mapped = mapApiPayloadToFrontend(created, {
-        fontName,
-        author: window.STATE.userName || `${first} ${last}`.trim(),
-        location: window.STATE.userLocation || '',
-        kind: 'video'
-      });
-      prependTestimony(mapped);
-
-      if (window.showToast){
-        window.showToast('TǸmoignage vidǸo envoyǸ. En attente de validation.', { kind: 'success' });
-      }
+      const payload = await postFormData(fd);
+      return {
+        payload,
+        extras: {
+          kind: 'video',
+          author: window.STATE.userName || `${first} ${last}`.trim(),
+          fontName,
+          location: window.STATE.userLocation || '',
+          color: colorHex
+        }
+      };
     }
 
     window.handleFormSubmit = serverHandler;

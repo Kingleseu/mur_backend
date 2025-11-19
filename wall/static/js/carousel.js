@@ -224,7 +224,13 @@ function addCarouselEventListeners(container) {
 }
 
 function renderCarouselColumns() {
-  const sortedTestimonies = [...window.CONFIG.TESTIMONIES]
+  const source = (
+    window.UTILS && typeof window.UTILS.getApprovedTestimonies === 'function'
+      ? window.UTILS.getApprovedTestimonies()
+      : (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES) ? window.CONFIG.TESTIMONIES : [])
+  );
+
+  const sortedTestimonies = [...source]
     .map(t => ({ ...t, amens: window.UTILS.getAmensForTestimony(t.id) }))
     .sort((a, b) => b.amens - a.amens);
   

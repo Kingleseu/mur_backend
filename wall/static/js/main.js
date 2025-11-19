@@ -143,7 +143,12 @@ function renderAuthButton() {
 function initializeHeroCounter() {
   const counterElement = document.getElementById('testimoniesCount');
   if (counterElement) {
-    window.UTILS.animateCounter(counterElement, window.CONFIG.TESTIMONIES.length);
+    const testimonies = (
+      window.UTILS && typeof window.UTILS.getApprovedTestimonies === 'function'
+        ? window.UTILS.getApprovedTestimonies()
+        : (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES) ? window.CONFIG.TESTIMONIES : [])
+    );
+    window.UTILS.animateCounter(counterElement, testimonies.length);
   }
 }
 

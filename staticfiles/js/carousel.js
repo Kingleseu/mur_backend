@@ -61,9 +61,10 @@ function renderCarouselCard(testimony, index) {
             Amen (<span class="amen-count">${amenCount}</span>)
           </button>
           <div class="share-buttons">
-            <button class="share-btn" data-platform="twitter" data-testimony-id="${testimony.id}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path>
+            <button class="share-btn" data-platform="x" data-testimony-id="${testimony.id}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4l16 16"></path>
+                <path d="M20 4L4 20"></path>
               </svg>
             </button>
             <button class="share-btn" data-platform="whatsapp" data-testimony-id="${testimony.id}">
@@ -115,9 +116,10 @@ function renderCarouselCard(testimony, index) {
             Amen (<span class="amen-count">${amenCount}</span>)
           </button>
           <div class="share-buttons">
-            <button class="share-btn" data-platform="twitter" data-testimony-id="${testimony.id}">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"></path>
+            <button class="share-btn" data-platform="x" data-testimony-id="${testimony.id}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4l16 16"></path>
+                <path d="M20 4L4 20"></path>
               </svg>
             </button>
             <button class="share-btn" data-platform="whatsapp" data-testimony-id="${testimony.id}">
@@ -222,7 +224,13 @@ function addCarouselEventListeners(container) {
 }
 
 function renderCarouselColumns() {
-  const sortedTestimonies = [...window.CONFIG.TESTIMONIES]
+  const source = (
+    window.UTILS && typeof window.UTILS.getApprovedTestimonies === 'function'
+      ? window.UTILS.getApprovedTestimonies()
+      : (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES) ? window.CONFIG.TESTIMONIES : [])
+  );
+
+  const sortedTestimonies = [...source]
     .map(t => ({ ...t, amens: window.UTILS.getAmensForTestimony(t.id) }))
     .sort((a, b) => b.amens - a.amens);
   

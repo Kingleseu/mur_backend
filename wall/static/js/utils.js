@@ -12,14 +12,18 @@ function getAmensForTestimony(id) {
   return count;
 }
 
-function getFilteredTestimonies() {
-  const { TESTIMONIES } = window.CONFIG;
-  const { selectedCategory } = window.STATE;
-
-  // Ne garder que les témoignages approuvés (ou sans statut explicite)
-  const approved = TESTIMONIES.filter(
-    (t) => !t.status || t.status === 'approved'
+function getApprovedTestimonies() {
+  if (!window.CONFIG || !Array.isArray(window.CONFIG.TESTIMONIES)) {
+    return [];
+  }
+  return window.CONFIG.TESTIMONIES.filter(
+    (testimony) => !testimony.status || testimony.status === 'approved'
   );
+}
+
+function getFilteredTestimonies() {
+  const { selectedCategory } = window.STATE;
+  const approved = getApprovedTestimonies();
 
   if (selectedCategory === 'Tous') {
     return approved;
@@ -233,6 +237,7 @@ function handleShare(testimony, platform) {
 // Export functions
 window.UTILS = {
   getAmensForTestimony,
+  getApprovedTestimonies,
   getFilteredTestimonies,
   getCurrentPageTestimonies,
   getTotalPages,

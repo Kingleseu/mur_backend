@@ -2,16 +2,26 @@
 // STATS - STATISTIQUES DYNAMIQUES
 // ================================================
 
+function resolveVisibleTestimonies() {
+  if (window.UTILS && typeof window.UTILS.getApprovedTestimonies === 'function') {
+    return window.UTILS.getApprovedTestimonies();
+  }
+  if (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES)) {
+    return window.CONFIG.TESTIMONIES.filter(
+      (testimony) => !testimony.status || testimony.status === 'approved'
+    );
+  }
+  return [];
+}
+
 /**
  * Calcule le total des "Amen" reçus sur tous les témoignages
+ * @param {Array} [testimonies] - Liste optionnelle de témoignages
  * @returns {number} - Total des Amens
  */
-function calculateTotalAmens() {
-  if (!window.CONFIG || !window.CONFIG.TESTIMONIES) {
-    return 0;
-  }
-  
-  return window.CONFIG.TESTIMONIES.reduce((sum, testimony) => {
+function calculateTotalAmens(testimonies) {
+  const pool = Array.isArray(testimonies) ? testimonies : resolveVisibleTestimonies();
+  return pool.reduce((sum, testimony) => {
     let count = 0;
 
     if (window.UTILS && typeof window.UTILS.getAmensForTestimony === 'function') {
@@ -49,8 +59,9 @@ function incrementSharesCount() {
  * Met à jour toutes les statistiques dynamiques de l'application
  */
 function updateDynamicStats() {
-  const totalTestimonies = window.CONFIG ? window.CONFIG.TESTIMONIES.length : 0;
-  const totalAmens = calculateTotalAmens();
+  const testimonies = resolveVisibleTestimonies();
+  const totalTestimonies = testimonies.length;
+  const totalAmens = calculateTotalAmens(testimonies);
   const totalShares = calculateTotalShares();
   
   // Mettre à jour le compteur Hero
@@ -94,9 +105,10 @@ function updateDynamicStats() {
  * @returns {Object} - Objet avec les statistiques
  */
 function getStats() {
+  const testimonies = resolveVisibleTestimonies();
   return {
-    testimonies: window.CONFIG ? window.CONFIG.TESTIMONIES.length : 0,
-    amens: calculateTotalAmens(),
+    testimonies: testimonies.length,
+    amens: calculateTotalAmens(testimonies),
     shares: calculateTotalShares()
   };
 }

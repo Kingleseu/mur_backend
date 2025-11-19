@@ -12,16 +12,25 @@ function getAmensForTestimony(id) {
   return count;
 }
 
+function getApprovedTestimonies() {
+  if (!window.CONFIG || !Array.isArray(window.CONFIG.TESTIMONIES)) {
+    return [];
+  }
+  return window.CONFIG.TESTIMONIES.filter(
+    (testimony) => !testimony.status || testimony.status === 'approved'
+  );
+}
+
 function getFilteredTestimonies() {
-  const { TESTIMONIES } = window.CONFIG;
   const { selectedCategory } = window.STATE;
-  
+  const approved = getApprovedTestimonies();
+
   if (selectedCategory === 'Tous') {
-    return TESTIMONIES;
+    return approved;
   } else if (selectedCategory === 'Vidéos') {
-    return TESTIMONIES.filter(t => t.type === 'video');
+    return approved.filter(t => t.type === 'video');
   } else {
-    return TESTIMONIES.filter(t => t.category === selectedCategory);
+    return approved.filter(t => t.category === selectedCategory);
   }
 }
 
@@ -74,6 +83,17 @@ function scrollToWall() {
   if (wallSection) {
     wallSection.scrollIntoView({ behavior: 'smooth' });
   }
+}
+
+function getShareUrl(testimony) {
+  if (testimony && testimony.shareUrl) {
+    return testimony.shareUrl;
+  }
+  const base = (window.CONFIG && window.CONFIG.SITE_URL) || window.location.origin;
+  if (testimony && testimony.id) {
+    return `${base.replace(/\/$/, '')}/testimony/${testimony.id}/`;
+  }
+  return window.location.href;
 }
 
 
@@ -168,19 +188,40 @@ async function handleAmen(id, event) {
 
 function handleShare(testimony, platform) {
   const text = `${testimony.title} - Mur de Témoignages Bunda21`;
-  const url = window.location.href;
+  const url = getShareUrl(testimony);
+  
+  if (platform === 'native' && navigator.share) {
+    navigator.share({ title: testimony.title, text, url }).catch(() => {});
+    return;
+  }
 
   switch (platform) {
     case 'twitter':
+    case 'x':
       window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
       break;
-    case 'whatsapp':
-      window.open(`https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
+    case 'whatsapp': {
+      const waBase = /Android|iPhone/i.test(navigator.userAgent || '')
+        ? 'https://wa.me/?text='
+        : 'https://api.whatsapp.com/send?text=';
+      window.open(`${waBase}${encodeURIComponent(`${text} ${url}`)}`, '_blank');
       break;
+    }
     case 'copy':
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Lien copié !');
-      });
+    default:
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          if (window.showToast) {
+            window.showToast('Lien copié dans le presse-papiers.', { kind: 'success' });
+          } else {
+            alert('Lien copié !');
+          }
+        }).catch(() => {
+          alert('Copiez ce lien : ' + url);
+        });
+      } else {
+        alert('Copiez ce lien : ' + url);
+      }
       break;
   }
   
@@ -196,12 +237,14 @@ function handleShare(testimony, platform) {
 // Export functions
 window.UTILS = {
   getAmensForTestimony,
+  getApprovedTestimonies,
   getFilteredTestimonies,
   getCurrentPageTestimonies,
   getTotalPages,
   animateCounter,
   triggerConfetti,
   scrollToWall,
+  getShareUrl,
   handleAmen,
   handleShare
 };

@@ -45,12 +45,46 @@
     { name: 'Shadows Into Light', value: 'Shadows Into Light, cursive' }
   ];
 
+  // Mots-clés pour l'autocatégorisation (normalisés sans accents)
+  const CATEGORY_KEYWORDS = {
+    "Guérison": [
+      "gueri", "gueris", "guéri", "guérison", "heal", "sante", "santé", "maladie", "malade",
+      "douleur", "operation", "chirurgie", "miracle", "fibrome", "fibromes", "kyste", "kystes",
+      "ulcere", "ulcère", "infection", "infections", "virus", "palud", "paludisme", "cancer",
+      "diabete", "diabète", "sida", "vih"
+    ],
+    "Provision": [
+      "job", "emploi", "travail", "embauche", "recrut", "contrat", "cdi", "cdd",
+      "business", "financ", "provision", "faveur", "bourse", "augmentation", "prime",
+      "facture", "loyer", "dette", "rembourse", "appel d'offres", "commande", "client"
+    ],
+    "Famille": [
+      "famille", "mariage", "conjoint", "époux", "épouse", "enfant", "grossesse", "naissance",
+      "fiançailles", "fiancailles", "union", "reconciliation", "reconcil", "restauration"
+    ],
+    "Délivrance": [
+      "delivr", "délivr", "libere", "libéré", "chaine", "oppression", "sorcellerie", "marabout",
+      "esprit", "possession", "attaque", "rejet", "blocage", "malédiction", "incube", "succube"
+    ],
+    "Éducation": [
+      "etude", "étude", "ecole", "école", "scolair", "classe", "examen", "concours", "univers",
+      "facult", "licenc", "master", "doctorat", "memoire", "mémoire", "these", "thèse", "bourse", "stage"
+    ],
+    "Protection": [
+      "protege", "protégé", "protection", "sauve", "sauvetage", "evite", "évit", "echappe",
+      "accident", "collision", "crash", "agression", "attaque", "braquage", "vol", "kidnap",
+      "incendie", "feu", "inondation", "danger", "risque"
+    ]
+  };
+
   config.TESTIMONIES = Array.isArray(config.TESTIMONIES) ? config.TESTIMONIES : [];
   config.CATEGORIES = config.CATEGORIES || CATEGORIES;
+  config.CATEGORY_KEYWORDS = config.CATEGORY_KEYWORDS || CATEGORY_KEYWORDS;
   config.COLOR_MAP = config.COLOR_MAP || COLOR_MAP;
   config.POST_IT_COLORS = config.POST_IT_COLORS || POST_IT_COLORS;
   config.FONT_STYLES = config.FONT_STYLES || FONT_STYLES;
   config.ITEMS_PER_PAGE = config.ITEMS_PER_PAGE || 9;
+  config.SITE_URL = config.SITE_URL || ((typeof window !== 'undefined' && window.location) ? window.location.origin : '');
 
   window.CONFIG = config;
 })();

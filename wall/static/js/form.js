@@ -405,82 +405,11 @@ function handleVideoUpload(e) {
 }
 
 function handleFormSubmit(e) {
-  e.preventDefault();
-  
-  const title = document.getElementById('formTitle').value.trim();
-  
-  const categoryValue = getSelectedCategoryValue(true);
-  if (!categoryValue) {
-    alert('Veuillez sélectionner une catégorie (et la préciser si vous choisissez "Autre").');
-    return;
+  // Ce handler est surchargé par server-submit.js pour appeler l'API.
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
   }
-  
-  if (window.STATE.testimonyType === 'text') {
-    const testimony = document.getElementById('formTestimony').value.trim();
-    
-    if (!title || !testimony) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
-    // Déterminer la couleur
-    let colorKey = 'yellow';
-    const colorValue = window.STATE.selectedColor.value;
-    if (colorValue === '#FFE5E5' || colorValue === '#FFE0E0') colorKey = 'pink';
-    else if (colorValue === '#E4FFEB' || colorValue === '#E0F7FA') colorKey = 'green';
-    
-    const newTestimony = {
-      id: Date.now(),
-      title,
-      text: testimony.substring(0, 100) + (testimony.length > 100 ? '...' : ''),
-      fullText: testimony,
-      color: colorKey,
-      font: window.STATE.selectedFont.name,
-      author: window.STATE.userName || 'Anonyme',
-      location: window.STATE.userLocation || 'Lieu non précisé',
-      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: categoryValue,
-      images: window.STATE.uploadedImages
-    };
-    
-    window.CONFIG.TESTIMONIES.unshift(newTestimony);
-    
-  } else {
-    if (!title || !window.STATE.videoFile) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    
-    const newTestimony = {
-      id: Date.now(),
-      type: 'video',
-      title,
-      thumbnail: 'https://images.unsplash.com/photo-1547357245-bd63d4b7c483?w=400',
-      fullText: title,
-      videoUrl: window.STATE.videoPreview,
-      duration: '2:00',
-      color: 'yellow',
-      author: window.STATE.userName || 'Anonyme',
-      location: window.STATE.userLocation || 'Lieu non précisé',
-      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: categoryValue
-    };
-    
-    window.CONFIG.TESTIMONIES.unshift(newTestimony);
-  }
-  
-  // Reset et fermer
-  resetForm();
-  window.MODALS.closeTestimonyForm();
-  
-  // Re-render
-  window.STATE.selectedCategory = 'Tous';
-  window.STATE.currentPage = 1;
-  window.TESTIMONIES_GRID.renderTestimoniesGrid();
-  window.TESTIMONIES_GRID.renderPagination();
-  window.CAROUSEL.renderCarouselColumns();
-  
-  alert('Témoignage soumis ! Il sera publié après validation par le CMP.');
+  return false;
 }
 
 function resetForm() {

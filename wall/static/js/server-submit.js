@@ -66,6 +66,7 @@
     const imageUrls = Array.isArray(apiPayload.images)
       ? apiPayload.images.map(img => img && img.url).filter(Boolean)
       : [];
+    const normalizedStatus = (apiPayload.status || extras.status || '').toLowerCase();
 
     const testimony = {
       id: apiPayload.id,
@@ -80,6 +81,9 @@
       category: apiPayload.category || '',
       amen_count: apiPayload.amen_count || 0
     };
+    if (normalizedStatus){
+      testimony.status = normalizedStatus;
+    }
 
     if (imageUrls.length){
       testimony.images = imageUrls;
@@ -175,26 +179,26 @@
 
   function handleServerSuccess(payload, extras = {}){
     if (!payload) return;
-    const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+    const status = (typeof payload.status === 'string') ? payload.status.toLowerCase() : '';
     if (status === 'approved') {
-      const normalized = mapApiPayloadToFrontend(payload, extras);
-      if (normalized) {
-        normalized.status = payload.status;
-        prependTestimony(normalized);
+      const testimony = mapApiPayloadToFrontend(payload, extras);
+      if (testimony){
+        testimony.status = 'approved';
+        prependTestimony(testimony);
         refreshUI();
       }
       if (window.showToast){
-        window.showToast('Témoignage publié immédiatement !', { kind: 'success' });
+        window.showToast('Témoignage approuvé et publié.', { kind: 'success' });
       } else {
-        alert('Témoignage publié immédiatement !');
+        alert('Témoignage approuvé et publié.');
       }
-      if (window.STATS && window.STATS.updateDynamicStats) {
-        window.STATS.updateDynamicStats();
-      }
-    } else if (window.showToast){
-      window.showToast('Témoignage envoyé. Il sera publié après validation.', { kind: 'success' });
+      return;
+    }
+
+    if (window.showToast){
+      window.showToast('Témoignage envoyé. Il sera affiché après validation.', { kind: 'success' });
     } else {
-      alert('Témoignage envoyé. Il sera publié après validation.');
+      alert('Témoignage envoyé. Il sera affiché après validation.');
     }
   }
 
@@ -204,9 +208,9 @@
       window.AUTH_OTP.ensureAuthThen(() => {});
     }
     if (window.showToast) {
-      window.showToast('Connectez-vous avant de publier votre tÃ©moignage.');
+      window.showToast('Connectez-vous avant de publier votre témoignage.');
     } else {
-      alert('Connectez-vous avant de publier votre tÃ©moignage.');
+      alert('Connectez-vous avant de publier votre témoignage.');
     }
     return false;
   }

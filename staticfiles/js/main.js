@@ -55,12 +55,26 @@ function renderAuthButton() {
     });
 
     // Déconnexion
-    logoutBtn.addEventListener('click', () => {
-      window.STATE.userName = null;
-      window.STATE.userEmail = null;
-      localStorage.removeItem('bunda21_user');
-      localStorage.removeItem('bunda21_email');
-      renderAuthButton();
+    logoutBtn.addEventListener('click', async (event) => {
+      event.preventDefault();
+      if (logoutBtn.disabled) return;
+      const initial = logoutBtn.textContent.trim();
+      logoutBtn.disabled = true;
+      logoutBtn.textContent = 'Déconnexion...';
+      try {
+        if (window.AUTH_OTP && typeof window.AUTH_OTP.signOut === 'function') {
+          await window.AUTH_OTP.signOut();
+        }
+      } catch (err) {
+        if (window.showToast) {
+          window.showToast(err.message || 'Impossible de vous déconnecter');
+        }
+      } finally {
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = initial;
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     // Localisation auto (simple)
@@ -129,7 +143,12 @@ function renderAuthButton() {
 function initializeHeroCounter() {
   const counterElement = document.getElementById('testimoniesCount');
   if (counterElement) {
-    window.UTILS.animateCounter(counterElement, window.CONFIG.TESTIMONIES.length);
+    const testimonies = (
+      window.UTILS && typeof window.UTILS.getApprovedTestimonies === 'function'
+        ? window.UTILS.getApprovedTestimonies()
+        : (window.CONFIG && Array.isArray(window.CONFIG.TESTIMONIES) ? window.CONFIG.TESTIMONIES : [])
+    );
+    window.UTILS.animateCounter(counterElement, testimonies.length);
   }
 }
 

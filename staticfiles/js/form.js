@@ -2,6 +2,40 @@
 // FORMULAIRE D'AJOUT DE TÉMOIGNAGE COMPLET
 // ================================================
 
+function normalizeText(text) {
+  return (text || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function inferCategoryFromTitle(rawTitle) {
+  const keywords = window.CONFIG.CATEGORY_KEYWORDS || {};
+  const text = normalizeText(rawTitle || '');
+  if (!text) return 'Autre';
+
+  const tokens = text.split(/[^a-z0-9]+/).filter(Boolean);
+  let best = { cat: 'Autre', score: 0 };
+
+  Object.entries(keywords).forEach(([category, list]) => {
+    let score = 0;
+    list.forEach((kw) => {
+      const normKw = normalizeText(kw);
+      if (normKw.includes(' ')) {
+        if (text.includes(normKw)) score += 4;
+        return;
+      }
+      tokens.forEach((tok) => {
+        if (tok === normKw) score += 4;
+        else if (tok.startsWith(normKw)) score += 3;
+        else if (tok.includes(normKw)) score += 1;
+      });
+    });
+    if (score > best.score) best = { cat: category, score };
+  });
+  return best.score > 0 ? best.cat : 'Autre';
+}
+
 function getSelectedCategoryValue(strict = true) {
   const select = document.getElementById('formCategory');
   if (!select) return '';
@@ -120,6 +154,36 @@ function initializeTestimonyForm() {
     categorySelect.addEventListener('change', syncCustomCategoryField);
     syncCustomCategoryField();
   }
+
+  // Auto-catégorisation basée sur le titre
+  const titleInput = document.getElementById('formTitle');
+  const applyAutoCategory = () => {
+    if (!titleInput) return;
+    const inferred = inferCategoryFromTitle(titleInput.value);
+    const select = document.getElementById('formCategory');
+    const customGroup = document.getElementById('customCategoryGroup');
+    const customInput = document.getElementById('formCategoryCustom');
+    if (!select || !inferred) return;
+    const normInf = normalizeText(inferred);
+    const match = Array.from(select.options).find(
+      (opt) => normalizeText(opt.value) === normInf
+    );
+    if (match && normInf !== 'autre') {
+      select.value = match.value;
+      if (customGroup) customGroup.classList.add('hidden');
+      if (customInput) customInput.value = '';
+    } else if (normInf === 'autre') {
+      const otherOpt = Array.from(select.options).find(
+        (opt) => normalizeText(opt.value) === 'autre'
+      );
+      if (otherOpt) select.value = otherOpt.value;
+      if (customGroup) customGroup.classList.remove('hidden');
+    }
+    syncCustomCategoryField();
+  };
+  if (titleInput) {
+    titleInput.addEventListener('input', applyAutoCategory);
+  }
   
   // Fermer popovers en cliquant ailleurs
   document.addEventListener('click', (e) => {
@@ -212,10 +276,6 @@ function initializeTestimonyForm() {
     const videoPlayer = document.getElementById('videoPreviewPlayer');
     videoPlayer.src = '';
   });
-  
-  // Soumission du formulaire
-  const testimonyForm = document.getElementById('testimonyForm');
-  testimonyForm.addEventListener('submit', handleFormSubmit);
   
   // Bouton annuler
   const cancelBtn = document.getElementById('formCancelBtn');
@@ -345,82 +405,11 @@ function handleVideoUpload(e) {
 }
 
 function handleFormSubmit(e) {
-  e.preventDefault();
-  
-  const title = document.getElementById('formTitle').value.trim();
-  
-  const categoryValue = getSelectedCategoryValue(true);
-  if (!categoryValue) {
-    alert('Veuillez sélectionner une catégorie (et la préciser si vous choisissez "Autre").');
-    return;
+  // Ce handler est surchargé par server-submit.js pour appeler l'API.
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
   }
-  
-  if (window.STATE.testimonyType === 'text') {
-    const testimony = document.getElementById('formTestimony').value.trim();
-    
-    if (!title || !testimony) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
-    // Déterminer la couleur
-    let colorKey = 'yellow';
-    const colorValue = window.STATE.selectedColor.value;
-    if (colorValue === '#FFE5E5' || colorValue === '#FFE0E0') colorKey = 'pink';
-    else if (colorValue === '#E4FFEB' || colorValue === '#E0F7FA') colorKey = 'green';
-    
-    const newTestimony = {
-      id: Date.now(),
-      title,
-      text: testimony.substring(0, 100) + (testimony.length > 100 ? '...' : ''),
-      fullText: testimony,
-      color: colorKey,
-      font: window.STATE.selectedFont.name,
-      author: window.STATE.userName || 'Anonyme',
-      location: window.STATE.userLocation || 'Lieu non précisé',
-      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: categoryValue,
-      images: window.STATE.uploadedImages
-    };
-    
-    window.CONFIG.TESTIMONIES.unshift(newTestimony);
-    
-  } else {
-    if (!title || !window.STATE.videoFile) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-    
-    const newTestimony = {
-      id: Date.now(),
-      type: 'video',
-      title,
-      thumbnail: 'https://images.unsplash.com/photo-1547357245-bd63d4b7c483?w=400',
-      fullText: title,
-      videoUrl: window.STATE.videoPreview,
-      duration: '2:00',
-      color: 'yellow',
-      author: window.STATE.userName || 'Anonyme',
-      location: window.STATE.userLocation || 'Lieu non précisé',
-      date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', ''),
-      category: categoryValue
-    };
-    
-    window.CONFIG.TESTIMONIES.unshift(newTestimony);
-  }
-  
-  // Reset et fermer
-  resetForm();
-  window.MODALS.closeTestimonyForm();
-  
-  // Re-render
-  window.STATE.selectedCategory = 'Tous';
-  window.STATE.currentPage = 1;
-  window.TESTIMONIES_GRID.renderTestimoniesGrid();
-  window.TESTIMONIES_GRID.renderPagination();
-  window.CAROUSEL.renderCarouselColumns();
-  
-  alert('Témoignage soumis ! Il sera publié après validation par le CMP.');
+  return false;
 }
 
 function resetForm() {
