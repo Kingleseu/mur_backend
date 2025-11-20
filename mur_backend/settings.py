@@ -57,12 +57,6 @@ INSTALLED_APPS = [
     'wall',
 ]
 
-INSTALLED_APPS += ['storages']
-
-# Activation du backend de stockage S3
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -183,9 +177,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MAX_AGE = 31536000  # 1 an
 
 # # ====== Media ======
-USE_S3_MEDIA = False  # Forcer le stockage local
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 # -------------------------------------------------------------------
 # Email (SMTP)
