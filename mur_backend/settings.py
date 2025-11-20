@@ -14,26 +14,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Charge les variables depuis .env en local
 load_dotenv(BASE_DIR / '.env')
 
-# S�curit� & debug
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
 DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.railway.app', 'temoignage.eglisecmp.com']
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-FORCE_HTTPS = os.getenv('FORCE_HTTPS', '1') == '1'
-if FORCE_HTTPS and not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-else:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    SECURE_HSTS_SECONDS = 0
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
+# # S�curit� & debug
+# SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
+# DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com', '.railway.app', 'temoignage.eglisecmp.com']
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+# FORCE_HTTPS = os.getenv('FORCE_HTTPS', '1') == '1'
+# if FORCE_HTTPS and not DEBUG:
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
+#     SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '31536000'))
+#     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#     SECURE_HSTS_PRELOAD = True
+# else:
+#     SECURE_SSL_REDIRECT = False
+#     SESSION_COOKIE_SECURE = False
+#     CSRF_COOKIE_SECURE = False
+#     SECURE_HSTS_SECONDS = 0
+#     SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+#     SECURE_HSTS_PRELOAD = False
 
 # -------------------------------------------------------------------
 # Apps
