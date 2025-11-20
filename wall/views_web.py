@@ -104,7 +104,7 @@ def home(request):
                 if first_image and first_image.image:
                     thumb_file = first_image.image.url
                 video_url = ''
-                if t.video_file and t.video_file.name and t.video_file.storage.exists(t.video_file.name):
+                if t.video_file and t.video_file.name:
                     video_url = _absolute(request, t.video_file.url)
                 elif t.video:
                     video_url = t.video
