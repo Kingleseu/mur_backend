@@ -1,7 +1,9 @@
 # wall/serializers.py
-from django.conf import settings
 from rest_framework import serializers
 from .models import Testimony, TestimonyImage
+
+MAX_VIDEO_UPLOAD_MB = 20
+MAX_VIDEO_UPLOAD_BYTES = MAX_VIDEO_UPLOAD_MB * 1024 * 1024
 
 class TestimonyImageSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
@@ -75,13 +77,11 @@ class TestimonySerializer(serializers.ModelSerializer):
             file_from_request = bool(request and (request.FILES.get('video_file') or request.FILES.get('video')))
             if not (has_upload or has_external or file_from_request):
                 raise serializers.ValidationError("La vidéo est requise pour un témoignage vidéo.")
-            max_bytes = getattr(settings, 'MAX_VIDEO_UPLOAD_BYTES', 80 * 1024 * 1024)
-            limit_mb = getattr(settings, 'MAX_VIDEO_UPLOAD_MB', 80)
             upload_candidate = attrs.get('video_file')
             if not upload_candidate and request:
                 upload_candidate = request.FILES.get('video_file') or request.FILES.get('video')
-            if upload_candidate and getattr(upload_candidate, 'size', 0) > max_bytes:
-                raise serializers.ValidationError(f"La vidéo ne doit pas dépasser {limit_mb} MB.")
+            if upload_candidate and getattr(upload_candidate, 'size', 0) > MAX_VIDEO_UPLOAD_BYTES:
+                raise serializers.ValidationError(f"La vidéo ne doit pas dépasser {MAX_VIDEO_UPLOAD_MB} MB.")
 
         return attrs
 

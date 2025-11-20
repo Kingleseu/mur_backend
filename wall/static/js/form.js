@@ -3,6 +3,8 @@
 // ================================================
 
 const MAX_TESTIMONY_CHARS = 500;
+const MAX_VIDEO_UPLOAD_MB = 20;
+const MAX_VIDEO_UPLOAD_BYTES = MAX_VIDEO_UPLOAD_MB * 1024 * 1024;
 
 function normalizeText(text) {
   return (text || '')
@@ -416,10 +418,9 @@ function handleVideoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   
-  const limitMb = (window.CONFIG && window.CONFIG.MAX_VIDEO_UPLOAD_MB) || 80;
-  const maxBytes = limitMb * 1024 * 1024;
+  const maxBytes = MAX_VIDEO_UPLOAD_BYTES;
   if (file.size > maxBytes) {
-    const message = `Vidéo trop volumineuse. Maximum ${limitMb} MB.`;
+    const message = `Vidéo trop volumineuse. Maximum ${MAX_VIDEO_UPLOAD_MB} MB.`;
     if (window.showToast) window.showToast(message);
     else showFormAlert(message);
     e.target.value = '';
