@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.conf import settings
@@ -64,6 +66,36 @@ def _normalize_media_url(url: str) -> str:
     cleaned = url.replace('/media/media/', '/media/', 1).replace('media/media/', 'media/', 1)
     return cleaned
 
+def _resolve_media_name(storage, name: str) -> str:
+    if not name:
+        return ''
+    try:
+        if storage.exists(name):
+            return name
+    except Exception:
+        pass
+    base, ext = os.path.splitext(name)
+    simplified = re.sub(r'_[A-Za-z0-9]{6,}$', '', base)
+    alt = simplified + ext
+    if alt != name:
+        try:
+            if storage.exists(alt):
+                return alt
+        except Exception:
+            pass
+    return name
+
+def _file_url_from_field(field, request):
+    if not field or not getattr(field, 'name', ''):
+        return ''
+    storage = getattr(field, 'storage', default_storage)
+    resolved = _resolve_media_name(storage, field.name)
+    try:
+        raw_url = storage.url(resolved)
+    except Exception:
+        raw_url = f"{settings.MEDIA_URL}{resolved}"
+    return _absolute(request, _normalize_media_url(raw_url))
+
 @ensure_csrf_cookie
 def home(request):
     try:
@@ -96,27 +128,24 @@ def home(request):
             if images_qs:
                 valid_urls = []
                 for img in images_qs:
-                    if not (img.image and img.image.name):
-                        continue
-                    if img.image.storage.exists(img.image.name):
-                        valid_urls.append(_absolute(request, _normalize_media_url(img.image.url)))
+                    url = _file_url_from_field(img.image, request)
+                    if url:
+                        valid_urls.append(url)
                 if valid_urls:
                     base['images'] = valid_urls
                     base.setdefault('thumbnail', valid_urls[0])
 
             if t.kind == 'video':
-                thumb_file = ''
+                thumb_url = ''
                 first_image = t.images.first()
                 if first_image and first_image.image:
-                    thumb_file = _normalize_media_url(first_image.image.url)
-                video_url = ''
-                if t.video_file and t.video_file.name:
-                    video_url = _absolute(request, _normalize_media_url(t.video_file.url))
-                elif t.video:
+                    thumb_url = _file_url_from_field(first_image.image, request)
+                video_url = _file_url_from_field(t.video_file, request)
+                if not video_url and t.video:
                     video_url = t.video
                 base.update({
                     'type': 'video',
-                    'thumbnail': _absolute(request, thumb_file),
+                    'thumbnail': thumb_url,
                     'videoUrl': video_url,
                     'duration': '',
                 })
