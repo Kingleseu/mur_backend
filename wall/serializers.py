@@ -1,4 +1,8 @@
-# wall/serializers.py
+import os
+import re
+
+from django.conf import settings
+from django.core.files.storage import default_storage
 from rest_framework import serializers
 from .models import Testimony, TestimonyImage
 
@@ -42,13 +46,50 @@ class TestimonySerializer(serializers.ModelSerializer):
         return obj.author_fullname()
 
     def get_video_url(self, obj):
+        """
+        Renvoie une URL vidéo exploitable en essayant de corriger
+        les noms de fichiers suffixés (ex: b21_3_XXXXXX.mp4) si le
+        fichier réel a été enregistré sans suffixe.
+        """
         request = self.context.get('request')
-        if obj.video_file:
-            url = obj.video_file.url
+
+        file_field = getattr(obj, 'video_file', None)
+        if file_field and getattr(file_field, 'name', ''):
+            storage = getattr(file_field, 'storage', default_storage)
+            name = file_field.name
+
+            # Si le chemin exact n'existe pas, tenter une version sans suffixe
+            try:
+                exists = storage.exists(name)
+            except Exception:
+                exists = False
+
+            if not exists:
+                base, ext = os.path.splitext(name)
+                simplified = re.sub(r'_[A-Za-z0-9]{6,}$', '', base)
+                alt = simplified + ext
+                if alt != name:
+                    try:
+                        if storage.exists(alt):
+                            name = alt
+                    except Exception:
+                        pass
+
+            try:
+                url = storage.url(name)
+            except Exception:
+                url = f"{settings.MEDIA_URL}{name}"
+
             if request:
                 return request.build_absolute_uri(url)
             return url
-        return obj.video or None
+
+        # Fallback sur une URL externe éventuellement stockée dans obj.video
+        if obj.video:
+            if request and not str(obj.video).startswith(('http://', 'https://')):
+                return request.build_absolute_uri(obj.video)
+            return obj.video
+        return None
 
     def get_amen_count(self, obj):
         if hasattr(obj, 'amen_count') and obj.amen_count is not None:
