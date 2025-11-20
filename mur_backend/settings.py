@@ -1,25 +1,57 @@
-"""
+﻿"""
 Django settings for mur_backend project.
 """
 
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.core.exceptions import SuspiciousOperation
 
 # -------------------------------------------------------------------
 # Bases
 # -------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Charge les variables depuis .env en local
+# Chargement du .env
 load_dotenv(BASE_DIR / '.env')
 
-# Sécurité & debug
+# -------------------------------------------------------------------
+# Sécurité & HTTPS
+# -------------------------------------------------------------------
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-unsafe')
-#DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
-DEBUG=True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com','.railway.app','temoignage.eglisecmp.com']  
+DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 
+ALLOWED_HOSTS = [
+    '127.0.0.1', 'localhost',
+    '.onrender.com', '.railway.app',
+    'temoignage.eglisecmp.com'
+]
+
+# Forcer HTTPS uniquement si pas en DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+FORCE_HTTPS = os.getenv('FORCE_HTTPS', '1') == '1'
+
+if FORCE_HTTPS and not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+
+# Protection XSS et clickjacking
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
 
 # -------------------------------------------------------------------
 # Apps
@@ -39,14 +71,33 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
 
-    # App
+    # App locale
     'wall',
 ]
+
+# Ajout conditionnel du stockage S3 (désactivé pour le moment)
+# INSTALLED_APPS += ['storages']
+# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# -------------------------------------------------------------------
+# Middleware
+# -------------------------------------------------------------------
+def upload_limit_middleware(get_response):
+    """
+    Middleware pour bloquer les fichiers trop volumineux (> 20 Mo)
+    """
+    def middleware(request):
+        max_bytes = 20 * 1024 * 1024  # 20 MB
+        if request.META.get('CONTENT_LENGTH') and int(request.META['CONTENT_LENGTH']) > max_bytes:
+            raise SuspiciousOperation("Fichier trop volumineux (limite : 20 Mo).")
+        return get_response(request)
+    return middleware
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -55,12 +106,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Ajout du middleware de limite d’upload au début
+MIDDLEWARE.insert(0, 'mur_backend.settings.upload_limit_middleware')
+
+# -------------------------------------------------------------------
+# URL & Templates
+# -------------------------------------------------------------------
 ROOT_URLCONF = 'mur_backend.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # Si tu as des templates “vanilla” en dehors des apps, tu peux mettre BASE_DIR / "templates"
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -76,57 +132,53 @@ TEMPLATES = [
 WSGI_APPLICATION = 'mur_backend.wsgi.application'
 
 # -------------------------------------------------------------------
-# DB
+# Base de données
 # -------------------------------------------------------------------
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': BASE_DIR / 'db.sqlite3',
-#    }
-# }
+USE_SQLITE = os.getenv('USE_SQLITE', 'true').lower() == 'true'
 
-
-
-import os
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'u911414181_cmpAdmin'),
-        'USER': os.getenv('DB_USER', 'u911414181_cmpAdmin'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'Jesusmas1234@'),
-        'HOST': os.getenv('DB_HOST', 'srv967.hstgr.io'),
-        'PORT': os.getenv('DB_PORT', '3306'),
-        'OPTIONS': {
-             'ssl': {'ssl_disabled': True},
-            'charset': 'utf8mb4',
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'connect_timeout': 10,
-        },
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-
-
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DB_NAME', 'u911414181_cmpAdmin'),
+            'USER': os.getenv('DB_USER', 'u911414181_cmpAdmin'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'Jesusmas1234@'),
+            'HOST': os.getenv('DB_HOST', 'srv967.hstgr.io'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+            'OPTIONS': {
+                'ssl': {'ssl_disabled': True},
+                'charset': 'utf8mb4',
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'connect_timeout': 10,
+            },
+        }
+    }
 
 # -------------------------------------------------------------------
-# Auth
+# Authentification
 # -------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # -------------------------------------------------------------------
-# DRF + Schema
+# DRF + Swagger
 # -------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
@@ -142,7 +194,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 # -------------------------------------------------------------------
-# CORS (si besoin pour le front)
+# CORS
 # -------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000", "http://127.0.0.1:3000",
@@ -155,16 +207,10 @@ CORS_ALLOW_CREDENTIALS = True
 # -------------------------------------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR / 'wall' / 'static',
-]
-
-# Whitenoise: stockage optimisé en prod
+STATICFILES_DIRS = [BASE_DIR / 'wall' / 'static']
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 WHITENOISE_MAX_AGE = 31536000  # 1 an
 
-# ====== Media ======
-USE_S3_MEDIA = False  # Forcer le stockage local
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -181,6 +227,15 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'athy etqz ikhe nhyr')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'no-reply@bunda21.org')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
-# Basculer automatiquement en console si aucun compte SMTP
 if not EMAIL_HOST_USER:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# -------------------------------------------------------------------
+# AWS S3 (désactivé temporairement)
+# -------------------------------------------------------------------
+# AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+# AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+# AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
+# AWS_S3_REGION_NAME = os.getenv('AWS_BUCKET_REGION')
+# AWS_QUERYSTRING_AUTH = False
+# AWS_DEFAULT_ACL = 'public-read'

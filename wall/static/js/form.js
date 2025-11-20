@@ -2,6 +2,8 @@
 // FORMULAIRE D'AJOUT DE TÉMOIGNAGE COMPLET
 // ================================================
 
+const MAX_TESTIMONY_CHARS = 500;
+
 function normalizeText(text) {
   return (text || '')
     .toLowerCase()
@@ -206,7 +208,6 @@ function showFormshowFormAlert(message) {
   // Compteur de caractères
   const testimonyTextarea = document.getElementById('formTestimony');
   const charCount = document.getElementById('charCount');
-  const MAX_TESTIMONY_CHARS = 500;
   let charLimitNotified = false;
   if (charCount) {
     const initialLen = testimonyTextarea.value ? testimonyTextarea.value.length : 0;
@@ -415,8 +416,13 @@ function handleVideoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
   
-  if (file.size > 120 * 1024 * 1024) {
-    showFormAlert('La vidéo est trop volumineuse. Maximum 120MB.');
+  const limitMb = (window.CONFIG && window.CONFIG.MAX_VIDEO_UPLOAD_MB) || 80;
+  const maxBytes = limitMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    const message = `Vidéo trop volumineuse. Maximum ${limitMb} MB.`;
+    if (window.showToast) window.showToast(message);
+    else showFormAlert(message);
+    e.target.value = '';
     return;
   }
   
@@ -449,7 +455,7 @@ function resetForm() {
   setTestimonyType('text');
 
   document.getElementById('photosPreview').innerHTML = '';
-  document.getElementById('charCount').textContent = '0';
+  document.getElementById('charCount').textContent = `0/${MAX_TESTIMONY_CHARS}`;
   document.getElementById('customCategoryGroup')?.classList.add('hidden');
   const customCatInput = document.getElementById('formCategoryCustom');
   if (customCatInput) customCatInput.value = '';

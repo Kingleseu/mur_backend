@@ -16,6 +16,7 @@ dialog {
   height: fit-content;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
   overflow: visible; /* Permet aux popovers de dépasser */
+  background: transparent;
 }
 
 /* Backdrop */
@@ -202,6 +203,12 @@ dialog[open] {
     margin-top: auto;
     overflow-y: auto;
     padding-bottom: 2.5rem;
+  }
+  
+  #testimonyDialog[open],
+  #videoDialog[open] {
+    align-items: flex-end;
+    justify-content: center;
   }
   
   /* Formulaire plein écran */
