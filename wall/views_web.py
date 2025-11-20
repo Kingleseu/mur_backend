@@ -58,6 +58,12 @@ def _absolute(request, url: str) -> str:
         return request.build_absolute_uri(url)
     return url
 
+def _normalize_media_url(url: str) -> str:
+    if not url:
+        return ''
+    cleaned = url.replace('/media/media/', '/media/', 1).replace('media/media/', 'media/', 1)
+    return cleaned
+
 @ensure_csrf_cookie
 def home(request):
     try:
@@ -93,7 +99,7 @@ def home(request):
                     if not (img.image and img.image.name):
                         continue
                     if img.image.storage.exists(img.image.name):
-                        valid_urls.append(_absolute(request, img.image.url))
+                        valid_urls.append(_absolute(request, _normalize_media_url(img.image.url)))
                 if valid_urls:
                     base['images'] = valid_urls
                     base.setdefault('thumbnail', valid_urls[0])
@@ -102,10 +108,10 @@ def home(request):
                 thumb_file = ''
                 first_image = t.images.first()
                 if first_image and first_image.image:
-                    thumb_file = first_image.image.url
+                    thumb_file = _normalize_media_url(first_image.image.url)
                 video_url = ''
                 if t.video_file and t.video_file.name:
-                    video_url = _absolute(request, t.video_file.url)
+                    video_url = _absolute(request, _normalize_media_url(t.video_file.url))
                 elif t.video:
                     video_url = t.video
                 base.update({
