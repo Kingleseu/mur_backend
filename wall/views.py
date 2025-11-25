@@ -117,3 +117,25 @@ class TestimonyViewSet(mixins.CreateModelMixin,
         obj.status = "rejected"
         obj.save(update_fields=["status"])
         return Response({"detail": "Rejeté."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="mine")
+    def mine(self, request):
+        """
+        Retourne tous les témoignages créés par l'utilisateur courant
+        (basé sur l'email stocké en session), quel que soit le statut.
+        """
+        verified = request.session.get('verified_user') or {}
+        email = (verified.get('email') or '').strip().lower()
+        if not email:
+            return Response(
+                {"detail": "Authentification requise."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        qs = (
+            Testimony.objects.filter(email__iexact=email)
+            .annotate(amen_count=Count('amen_entries'))
+            .order_by('-created_at')
+        )
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

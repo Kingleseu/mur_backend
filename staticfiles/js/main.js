@@ -39,6 +39,16 @@ function renderAuthButton() {
     const btn = container.querySelector('#userMenuBtn');
     const logoutBtn = container.querySelector('#logoutBtn');
 
+    const dropdown = container.querySelector('#userDropdown');
+    if (dropdown && !dropdown.querySelector('#myTestimoniesBtn')) {
+      const myBtn = document.createElement('button');
+      myBtn.className = 'logout-btn';
+      myBtn.id = 'myTestimoniesBtn';
+      myBtn.textContent = 'Mes témoignages';
+      dropdown.insertBefore(myBtn, logoutBtn);
+    }
+    const myTestimoniesBtn = container.querySelector('#myTestimoniesBtn');
+
     // Ouvrir / fermer le dropdown au clic
     btn.addEventListener('click', (e) => {
       e.stopPropagation();

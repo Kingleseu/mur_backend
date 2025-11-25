@@ -236,6 +236,74 @@ function closeTestimonyForm() {
   }
 }
 
+async function openMyTestimonies() {
+  const dialog = document.getElementById('myTestimoniesDialog');
+  const listEl = document.getElementById('myTestimoniesList');
+  if (!dialog || !listEl) return;
+
+  listEl.innerHTML = '<p>Chargement de vos témoignages...</p>';
+  dialog.showModal();
+  focusDialogOnMobile(dialog);
+
+  try {
+    const res = await fetch('/api/testimonies/mine/', {
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.status === 403) {
+      dialog.close();
+      if (window.AUTH_OTP && typeof window.AUTH_OTP.ensureAuthThen === 'function') {
+        window.AUTH_OTP.ensureAuthThen(() => openMyTestimonies());
+      }
+      if (window.showToast) {
+        window.showToast("Connectez-vous pour voir vos témoignages.");
+      }
+      return;
+    }
+    if (!res.ok) {
+      throw new Error(`Erreur (${res.status})`);
+    }
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) {
+      listEl.innerHTML = '<p>Aucun témoignage enregistré avec votre compte pour le moment.</p>';
+      return;
+    }
+
+    const statusLabel = (st) => {
+      const s = (st || '').toLowerCase();
+      if (s === 'approved') return { cls: 'approved', label: 'Approuvé' };
+      if (s === 'rejected') return { cls: 'rejected', label: 'Rejeté' };
+      return { cls: 'pending', label: 'En attente' };
+    };
+
+    listEl.innerHTML = items.map((t) => {
+      const meta = statusLabel(t.status);
+      const kind = (t.kind || 'text') === 'video' ? 'Vidéo' : 'Texte';
+      const date = t.created_at ? new Date(t.created_at).toLocaleDateString('fr-FR') : '';
+      return `
+        <article class="my-testimony-item">
+          <div class="my-testimony-title">${t.title || '(Sans titre)'}</div>
+          <div>${kind}</div>
+          <div class="my-testimony-meta">
+            <span class="my-testimony-status ${meta.cls}">${meta.label}</span>
+            <span>${date}</span>
+          </div>
+        </article>
+      `;
+    }).join('');
+  } catch (error) {
+    listEl.innerHTML = '<p>Impossible de charger vos témoignages.</p>';
+    if (window.showToast) {
+      window.showToast(error.message || 'Erreur lors du chargement de vos témoignages.');
+    }
+  }
+}
+
+function closeMyTestimonies() {
+  const dialog = document.getElementById('myTestimoniesDialog');
+  if (dialog) dialog.close();
+}
+
 // Initialize modal event listeners
 function initializeModals() {
   // Auth Dialog
@@ -313,6 +381,15 @@ function initializeModals() {
   if (formDialog) {
     formDialog.querySelector('.modal-close').addEventListener('click', closeTestimonyForm);
   }
+
+  // My Testimonies Dialog
+  const myDialog = document.getElementById('myTestimoniesDialog');
+  if (myDialog) {
+    const btnClose = myDialog.querySelector('.modal-close');
+    if (btnClose) {
+      btnClose.addEventListener('click', closeMyTestimonies);
+    }
+  }
 }
 
 // Export functions
@@ -325,5 +402,7 @@ window.MODALS = {
   closeVideoModal,
   openTestimonyForm,
   closeTestimonyForm,
+  openMyTestimonies,
+  closeMyTestimonies,
   initializeModals
 };
