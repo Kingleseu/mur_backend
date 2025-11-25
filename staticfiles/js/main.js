@@ -149,6 +149,16 @@ function renderAuthButton() {
   }
 }
 
+// Global handler for "Mes témoignages" button (in dropdown)
+document.addEventListener('click', (event) => {
+  const btn = event.target.closest ? event.target.closest('#myTestimoniesBtn') : null;
+  if (!btn) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (window.MODALS && typeof window.MODALS.openMyTestimonies === 'function') {
+    window.MODALS.openMyTestimonies();
+  }
+});
 
 function initializeHeroCounter() {
   const counterElement = document.getElementById('testimoniesCount');
